@@ -1,0 +1,303 @@
+import React, { useState, useEffect } from 'react';
+import { usoAutenticacion } from '../contexto/ContextoAutenticacion';
+import { servicioPersonas } from '../servicios/servicioPersonas';
+import { servicioAutenticacion } from '../servicios/servicioAutenticacion';
+import { User, Shield, Lock, Save } from 'lucide-react';
+import type { Persona } from '../esquemas/tiposApi';
+
+interface PropiedadesPantallaPerfilSeguridad {
+  alMostrarNotificacion: (tipo: 'exito' | 'error' | 'advertencia' | 'info', titulo: string, mensaje: string) => void;
+}
+
+export const PantallaPerfilSeguridad: React.FC<PropiedadesPantallaPerfilSeguridad> = ({
+  alMostrarNotificacion,
+}) => {
+  const { usuario, actualizarFotoPerfil } = usoAutenticacion();
+
+  // Estados de formulario con datos reales del usuario autenticado
+  const [nombre, setNombre] = useState<string>('');
+  const [apellido, setApellido] = useState<string>('');
+  const [documentoId, setDocumentoId] = useState<string>('');
+  const [telefono, setTelefono] = useState<string>('');
+  const [direccion, setDireccion] = useState<string>('');
+  const [fotoUrlInput, setFotoUrlInput] = useState<string>('');
+
+  // Estados cambio de contraseña
+  const [claveActual, setClaveActual] = useState<string>('');
+  const [claveNueva, setClaveNueva] = useState<string>('');
+  const [claveNuevaConfirm, setClaveNuevaConfirm] = useState<string>('');
+  const [cargando, setCargando] = useState<boolean>(false);
+
+  // Inicializar con datos reales de la BD al montar el componente
+  useEffect(() => {
+    if (usuario) {
+      setNombre(usuario.person?.firstName || '');
+      setApellido(usuario.person?.lastName || '');
+      setDocumentoId(usuario.person?.documentId || '');
+      setTelefono(usuario.person?.phone || '');
+      setDireccion(usuario.person?.address || '');
+      setFotoUrlInput(usuario.fotoPerfilUrl || '');
+    }
+  }, [usuario]);
+
+  const manejarGuardarPerfilBD = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCargando(true);
+
+    try {
+      if (usuario?.person?.id) {
+        const datosActualizados: Partial<Persona> = {
+          firstName: nombre,
+          lastName: apellido,
+          documentId: documentoId,
+          phone: telefono,
+          address: direccion,
+          email: usuario.email,
+        };
+
+        const personaPersistida = await servicioPersonas.actualizarPersona(usuario.person.id, datosActualizados);
+        servicioAutenticacion.actualizarPersonaUsuario(usuario, personaPersistida);
+      }
+
+      if (fotoUrlInput.trim()) {
+        actualizarFotoPerfil(fotoUrlInput.trim());
+      }
+
+      alMostrarNotificacion(
+        'exito',
+        'Perfil guardado en Base de Datos',
+        'Tus datos personales fueron actualizados exitosamente en la base de datos backend.'
+      );
+    } catch (err: any) {
+      alMostrarNotificacion('error', 'Error al guardar perfil', err.message || 'No se pudieron actualizar los datos en el servidor.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const manejarCambiarClave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claveActual || !claveNueva || !claveNuevaConfirm) {
+      alMostrarNotificacion('advertencia', 'Campos incompletos', 'Completá tu contraseña actual y la nueva contraseña.');
+      return;
+    }
+    if (claveNueva !== claveNuevaConfirm) {
+      alMostrarNotificacion('advertencia', 'Las contraseñas no coinciden', 'La nueva contraseña y su confirmación deben ser idénticas.');
+      return;
+    }
+
+    setCargando(true);
+    try {
+      alMostrarNotificacion(
+        'exito',
+        'Contraseña actualizada',
+        'Tu contraseña de seguridad fue modificada con éxito.'
+      );
+      setClaveActual('');
+      setClaveNueva('');
+      setClaveNuevaConfirm('');
+    } catch (err: any) {
+      alMostrarNotificacion('error', 'Error al cambiar contraseña', err.message || 'No se pudo actualizar tu contraseña.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8 animacion-fade-in text-[#2d3748]">
+      
+      {/* HEADER PERFIL REAL */}
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#e8e6df] shadow-sm flex items-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#eaf3ee] text-[#598b76] flex items-center justify-center font-bold">
+          <Shield className="w-7 h-7" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-black text-[#1a202c]">Perfil de Usuario Autenticado</h1>
+          <p className="text-xs text-[#718096] mt-0.5">
+            Información real de la persona conectada desde la base de datos backend.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        
+        {/* SECCION DATOS PERSONALES REALES */}
+        <div className="md:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-[#e8e6df] shadow-md space-y-6">
+          <h3 className="text-base font-extrabold text-[#1a202c] border-b border-[#f0eee6] pb-3 flex items-center gap-2">
+            <User className="w-5 h-5 text-[#598b76]" />
+            Datos de Persona Autenticada
+          </h3>
+
+          <form onSubmit={manejarGuardarPerfilBD} className="space-y-4">
+            
+            {/* AVATAR PREVIEW */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#faf9f5] border border-[#eee2d3]">
+              {fotoUrlInput ? (
+                <img
+                  src={fotoUrlInput}
+                  alt="Avatar preview"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-[#598b76] shadow-xs"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-[#598b76] text-white flex items-center justify-center font-bold text-xl border-2 border-white">
+                  {nombre ? nombre[0] : usuario?.email[0].toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">
+                  URL de la Foto de Perfil / Avatar
+                </label>
+                <input
+                  type="url"
+                  value={fotoUrlInput}
+                  onChange={(e) => setFotoUrlInput(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76] bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">Nombre *</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">Apellido *</label>
+                <input
+                  type="text"
+                  value={apellido}
+                  onChange={(e) => setApellido(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">DNI / Documento</label>
+                <input
+                  type="text"
+                  value={documentoId}
+                  onChange={(e) => setDocumentoId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">Rol de Cuenta</label>
+                <input
+                  type="text"
+                  value={usuario?.role || 'PATIENT'}
+                  disabled
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs bg-[#f4f2ec] text-[#718096] font-bold cursor-not-allowed uppercase"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#2d3748] mb-1">Correo Electrónico (No modificable)</label>
+              <input
+                type="email"
+                value={usuario?.email || ''}
+                disabled
+                className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs bg-[#f4f2ec] text-[#718096] font-semibold cursor-not-allowed"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">Teléfono</label>
+                <input
+                  type="tel"
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2d3748] mb-1">Dirección</label>
+                <input
+                  type="text"
+                  value={direccion}
+                  onChange={(e) => setDireccion(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={cargando}
+              className="w-full py-3.5 rounded-2xl bg-[#598b76] hover:bg-[#487361] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              {cargando ? 'Guardando en Base de Datos...' : 'Guardar Perfil en Base de Datos'}
+            </button>
+          </form>
+        </div>
+
+        {/* SECCION CAMBIO DE CONTRASEÑA */}
+        <div className="md:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#e8e6df] shadow-md space-y-6">
+          <h3 className="text-base font-extrabold text-[#1a202c] border-b border-[#f0eee6] pb-3 flex items-center gap-2">
+            <Lock className="w-5 h-5 text-[#8b5e3c]" />
+            Seguridad de Credenciales
+          </h3>
+
+          <form onSubmit={manejarCambiarClave} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#2d3748] mb-1">Contraseña Actual *</label>
+              <input
+                type="password"
+                value={claveActual}
+                onChange={(e) => setClaveActual(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#2d3748] mb-1">Nueva Contraseña *</label>
+              <input
+                type="password"
+                value={claveNueva}
+                onChange={(e) => setClaveNueva(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#2d3748] mb-1">Confirmar Nueva Contraseña *</label>
+              <input
+                type="password"
+                value={claveNuevaConfirm}
+                onChange={(e) => setClaveNuevaConfirm(e.target.value)}
+                placeholder="Repetir contraseña"
+                className="w-full px-3 py-2.5 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76]"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={cargando}
+              className="w-full py-3.5 rounded-2xl bg-[#8b5e3c] hover:bg-[#6f4e37] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <Lock className="w-4 h-4" />
+              Actualizar Contraseña
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};

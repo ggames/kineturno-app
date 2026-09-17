@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-beige-50: #fdfbf7;
+    --color-beige-100: #f5f0e6;
+    --color-beige-200: #eadbc8;
+    --color-beige-300: #dac0a3;
+    
+    --color-verde-50: #e6f8f5;
+    --color-verde-100: #ccf1eb;
+    --color-verde-500: #028090;
+    --color-verde-600: #00a896;
+    --color-verde-700: #02c39a;
+    --color-verde-900: #115e59;
+    
+    --color-madera-100: #f4ece4;
+    --color-madera-500: #d4a373;
+    --color-madera-700: #8b5e3c;
+    --color-madera-900: #6f4e37;
+  }
+
+  body {
+    background-color: var(--color-beige-50);
+    color: #1f2937;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.bg-beige-fondo { background-color: #fdfbf7; }
+.bg-beige-tarjeta { background-color: #f5f0e6; }
+.bg-beige-borde { border-color: #eadbc8; }
+
+.bg-verde-principal { background-color: #028090; }
+.bg-verde-secundario { background-color: #00a896; }
+.bg-verde-suave { background-color: #e6f8f5; }
+.text-verde-principal { color: #028090; }
+.text-verde-oscuro { color: #115e59; }
+
+.bg-madera-acento { background-color: #8b5e3c; }
+.bg-madera-suave { background-color: #f4ece4; }
+.text-madera-principal { color: #8b5e3c; }
+.border-madera { border-color: #d4a373; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animacion-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
