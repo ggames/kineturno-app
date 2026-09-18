@@ -1,5 +1,5 @@
 import React from 'react';
-import { usoAutenticacion } from '../../contexto/ContextoAutenticacion';
+import { useAutenticacion } from '../../contexto/ContextoAutenticacion';
 import { Calendar, UserCheck, Users, LogOut, Activity } from 'lucide-react';
 
 interface PropiedadesBarralNavegacion {
@@ -11,7 +11,7 @@ export const BarralNavegacion: React.FC<PropiedadesBarralNavegacion> = ({
   pantallaActiva,
   alCambiarPantalla,
 }) => {
-  const { usuario, cerrarSesion } = usoAutenticacion();
+  const { usuario, cerrarSesion } = useAutenticacion();
 
   if (!usuario) return null;
 

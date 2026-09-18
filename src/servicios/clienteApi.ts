@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 // Cliente Axios centralizado para KineTurnos
 export const clienteApi = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,10 +42,11 @@ clienteApi.interceptors.response.use(
       const urlPeticion = error.config?.url || '';
 
       if (error.response.status === 401) {
-        // No borrar la sesión si el error viene de la pantalla de login (/auth/login)
-        if (!urlPeticion.includes('/auth/login')) {
+        // No borrar la sesión si el error viene de rutas de autenticación
+        if (!urlPeticion.includes('/auth/login') && !urlPeticion.includes('/auth/register')) {
           localStorage.removeItem('token_kineturnos');
           localStorage.removeItem('usuario_kineturnos');
+          window.dispatchEvent(new Event('auth:unauthorized'));
           mensajeRespuesta = 'Tu sesión expiró o no tenés autorización. Por favor, volvé a iniciar sesión.';
         } else {
           mensajeRespuesta = 'Credenciales incorrectas. Verificá tu correo y contraseña e intentá de nuevo.';
@@ -57,7 +58,7 @@ clienteApi.interceptors.response.use(
       } else if (error.response.status === 409) {
         mensajeRespuesta = 'Ya existe un registro con esos datos o fecha en la base de datos.';
       }
-    } else if (error.code === 'ECONNABORTED' || error.message.includes('Network Error')) {
+    } else if (error.code === 'ECONNABORTED' || (error.message && error.message.includes('Network Error'))) {
       mensajeRespuesta = 'Error de conexión. Comprobá tu conexión a internet o verificá que el servidor esté activo.';
     }
 

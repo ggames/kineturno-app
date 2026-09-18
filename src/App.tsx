@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { ProveedorAutenticacion, usoAutenticacion } from './contexto/ContextoAutenticacion';
+import React, { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAutenticacion } from './contexto/ContextoAutenticacion';
 import { BarraLateral } from './componentes/navegacion/BarraLateral';
 import { EncabezadoSuperior } from './componentes/navegacion/EncabezadoSuperior';
 import { NotificacionToast, type MensajeToast } from './componentes/comunes/NotificacionToast';
-import { servicioAutenticacion } from './servicios/servicioAutenticacion';
 
 // Pantallas
 import { PantallaBienvenida } from './pantallas/PantallaBienvenida';
@@ -16,48 +16,12 @@ import { PantallaGestionPacientes } from './pantallas/PantallaGestionPacientes';
 import { PantallaRegistroProfesionales } from './pantallas/PantallaRegistroProfesionales';
 import { PantallaAdministracionUsuarios } from './pantallas/PantallaAdministracionUsuarios';
 import { PantallaPerfilSeguridad } from './pantallas/PantallaPerfilSeguridad';
+import { PantallaGestionFeriados } from './pantallas/PantallaGestionFeriados';
 import { HelpCircle, Stethoscope, BarChart3 } from 'lucide-react';
 
-const ContenidoAplicacion: React.FC = () => {
-  const { usuario, cerrarSesion } = usoAutenticacion();
-  const [pantallaActiva, setPantallaActiva] = useState<string>('bienvenida');
-  const [notificaciones, setNotificaciones] = useState<MensajeToast[]>([]);
+const RutasSistema: React.FC<{ agregarNotificacion: any }> = ({ agregarNotificacion }) => {
+  const { usuario, cerrarSesion } = useAutenticacion();
   const [barraLateralVisible, setBarraLateralVisible] = useState<boolean>(true);
-
-  // Obtener usuario autenticado de contexto o de localStorage
-  const usuarioActivo = usuario || servicioAutenticacion.obtenerUsuarioActual();
-
-  // Lanzar notificaciones toast personalizadas
-  const agregarNotificacion = (
-    tipo: 'exito' | 'error' | 'advertencia' | 'info',
-    titulo: string,
-    mensaje: string
-  ) => {
-    const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
-    const nuevaNotificacion: MensajeToast = { id, tipo, titulo, mensaje };
-    setNotificaciones((prev) => [...prev, nuevaNotificacion]);
-
-    setTimeout(() => {
-      setNotificaciones((prev) => prev.filter((n) => n.id !== id));
-    }, 5000);
-  };
-
-  const cerrarNotificacion = (id: string) => {
-    setNotificaciones((prev) => prev.filter((n) => n.id !== id));
-  };
-
-  // Redireccionar al Dashboard principal ('inicio') al autenticarse
-  useEffect(() => {
-    if (!usuarioActivo) {
-      if (pantallaActiva !== 'login' && pantallaActiva !== 'registro') {
-        setPantallaActiva('bienvenida');
-      }
-    } else {
-      if (pantallaActiva === 'bienvenida' || pantallaActiva === 'login' || pantallaActiva === 'registro') {
-        setPantallaActiva('inicio');
-      }
-    }
-  }, [usuarioActivo, pantallaActiva]);
 
   // Vistas secundarias genéricas
   const renderizarServicios = () => (
@@ -110,139 +74,83 @@ const ContenidoAplicacion: React.FC = () => {
     </div>
   );
 
-  // Renderizar la pantalla correspondiente
-  const renderizarContenidoPrincipal = () => {
-    if (!usuarioActivo) {
-      if (pantallaActiva === 'login') {
-        return (
-          <PantallaLogin
-            vistaInicial="login"
-            alVolverBienvenida={() => setPantallaActiva('bienvenida')}
-            alIngresarExitoso={() => setPantallaActiva('inicio')}
-            alMostrarNotificacion={agregarNotificacion}
-          />
-        );
-      }
-      if (pantallaActiva === 'registro') {
-        return (
-          <PantallaLogin
-            vistaInicial="registro"
-            alVolverBienvenida={() => setPantallaActiva('bienvenida')}
-            alIngresarExitoso={() => setPantallaActiva('inicio')}
-            alMostrarNotificacion={agregarNotificacion}
-          />
-        );
-      }
-      return (
-        <PantallaBienvenida
-          alIngresar={() => setPantallaActiva('login')}
-          alRegistrarse={() => setPantallaActiva('registro')}
+  if (!usuario) {
+    return (
+      <div className="w-full">
+        <Routes>
+          <Route path="/bienvenida" element={<PantallaBienvenida />} />
+          <Route path="/login" element={<PantallaLogin vistaInicial="login" alMostrarNotificacion={agregarNotificacion} />} />
+          <Route path="/registro" element={<PantallaLogin vistaInicial="registro" alMostrarNotificacion={agregarNotificacion} />} />
+          <Route path="*" element={<Navigate to="/bienvenida" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {barraLateralVisible && (
+        <BarraLateral
+          usuario={usuario}
+          alCerrarSesion={cerrarSesion}
         />
-      );
-    }
+      )}
+      <div className="flex-1 flex flex-col min-w-0">
+        <EncabezadoSuperior
+          usuario={usuario}
+          alAlternarBarraLateral={() => setBarraLateralVisible(!barraLateralVisible)}
+          alAbrirNotificaciones={() => agregarNotificacion('info', 'Notificaciones', 'Tenés turnos programados esta semana.')}
+        />
+        <main className="flex-1 overflow-y-auto relative">
+          <Routes>
+            <Route path="/" element={<PantallaPanelControlDashboard usuario={usuario} alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/turnos" element={usuario.role === 'PATIENT' ? <PantallaKineTurnosPaciente alMostrarNotificacion={agregarNotificacion} /> : <PantallaGestionTurnosStaff alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/agenda" element={<PantallaAgendaCalendario alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/pacientes" element={<PantallaGestionPacientes alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/profesionales" element={<PantallaRegistroProfesionales alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/feriados" element={<PantallaGestionFeriados alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/servicios" element={renderizarServicios()} />
+            <Route path="/reportes" element={renderizarReportes()} />
+            <Route path="/configuracion" element={usuario.role === 'ADMIN' ? <PantallaAdministracionUsuarios alMostrarNotificacion={agregarNotificacion} /> : <PantallaPerfilSeguridad alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/perfil" element={<PantallaPerfilSeguridad alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/ayuda" element={renderizarAyuda()} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </>
+  );
+};
 
-    // Usuario Autenticado -> Renderizar panel principal
-    switch (pantallaActiva) {
-      case 'inicio':
-        return (
-          <PantallaPanelControlDashboard
-            usuario={usuarioActivo}
-            alSeleccionarMenu={(m) => setPantallaActiva(m)}
-            alMostrarNotificacion={agregarNotificacion}
-          />
-        );
+export function App() {
+  const [notificaciones, setNotificaciones] = useState<MensajeToast[]>([]);
 
-      case 'turnos':
-        return usuarioActivo.role === 'PATIENT' ? (
-          <PantallaKineTurnosPaciente alMostrarNotificacion={agregarNotificacion} />
-        ) : (
-          <PantallaGestionTurnosStaff alMostrarNotificacion={agregarNotificacion} />
-        );
+  const agregarNotificacion = (
+    tipo: 'exito' | 'error' | 'advertencia' | 'info',
+    titulo: string,
+    mensaje: string
+  ) => {
+    const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
+    const nuevaNotificacion: MensajeToast = { id, tipo, titulo, mensaje };
+    setNotificaciones((prev) => [...prev, nuevaNotificacion]);
 
-      case 'agenda':
-        return <PantallaAgendaCalendario alMostrarNotificacion={agregarNotificacion} />;
+    setTimeout(() => {
+      setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+    }, 5000);
+  };
 
-      case 'pacientes':
-        return <PantallaGestionPacientes alMostrarNotificacion={agregarNotificacion} />;
-
-      case 'profesionales':
-        return <PantallaRegistroProfesionales alMostrarNotificacion={agregarNotificacion} />;
-
-      case 'servicios':
-        return renderizarServicios();
-
-      case 'reportes':
-        return renderizarReportes();
-
-      case 'configuracion':
-        return usuarioActivo.role === 'ADMIN' ? (
-          <PantallaAdministracionUsuarios alMostrarNotificacion={agregarNotificacion} />
-        ) : (
-          <PantallaPerfilSeguridad alMostrarNotificacion={agregarNotificacion} />
-        );
-
-      case 'perfil':
-        return <PantallaPerfilSeguridad alMostrarNotificacion={agregarNotificacion} />;
-
-      case 'ayuda':
-        return renderizarAyuda();
-
-      default:
-        return (
-          <PantallaPanelControlDashboard
-            usuario={usuarioActivo}
-            alSeleccionarMenu={(m) => setPantallaActiva(m)}
-            alMostrarNotificacion={agregarNotificacion}
-          />
-        );
-    }
+  const cerrarNotificacion = (id: string) => {
+    setNotificaciones((prev) => prev.filter((n) => n.id !== id));
   };
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] flex font-sans selection:bg-[#eaf3ee] selection:text-[#234e3d]">
-      
-      {/* BARRA LATERAL DEL PANEL NUEVO (SI EL USUARIO ESTA AUTENTICADO) */}
-      {usuarioActivo && barraLateralVisible && (
-        <BarraLateral
-          menuActivo={pantallaActiva}
-          alSeleccionarMenu={(m) => setPantallaActiva(m)}
-          usuario={usuarioActivo}
-          alCerrarSesion={() => {
-            cerrarSesion();
-            setPantallaActiva('bienvenida');
-          }}
-        />
-      )}
-
-      {/* CONTENEDOR DERECHO */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {usuarioActivo && (
-          <EncabezadoSuperior
-            usuario={usuarioActivo}
-            alAlternarBarraLateral={() => setBarraLateralVisible(!barraLateralVisible)}
-            alAbrirNotificaciones={() => agregarNotificacion('info', 'Notificaciones', 'Tenés turnos programados esta semana.')}
-          />
-        )}
-
-        <main className="flex-1 overflow-y-auto">
-          {renderizarContenidoPrincipal()}
-        </main>
-      </div>
-
-      {/* SISTEMA GLOBAL DE TOAST NOTIFICATION */}
+      <RutasSistema agregarNotificacion={agregarNotificacion} />
       <NotificacionToast
         notificaciones={notificaciones}
         alCerrar={cerrarNotificacion}
       />
     </div>
-  );
-};
-
-export function App() {
-  return (
-    <ProveedorAutenticacion>
-      <ContenidoAplicacion />
-    </ProveedorAutenticacion>
   );
 }
 

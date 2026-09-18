@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { usoAutenticacion } from '../contexto/ContextoAutenticacion';
+import { useAutenticacion } from '../contexto/ContextoAutenticacion';
 import { servicioTurnos } from '../servicios/servicioTurnos';
 import { servicioProfesionales } from '../servicios/servicioProfesionales';
 import { servicioObrasSociales } from '../servicios/servicioObrasSociales';
@@ -35,7 +35,7 @@ import { obtenerFechaLocalISO } from '../utilidades/fechas';
 export const PantallaKineTurnosPaciente: React.FC<PropiedadesPantallaKineTurnosPaciente> = ({
   alMostrarNotificacion,
 }) => {
-  const { usuario } = usoAutenticacion();
+  const { usuario } = useAutenticacion();
 
   // Estados de datos
   const [turnos, setTurnos] = useState<Turno[]>([]);

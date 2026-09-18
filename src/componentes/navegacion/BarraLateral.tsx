@@ -15,19 +15,18 @@ import {
 } from 'lucide-react';
 import type { Usuario } from '../../esquemas/tiposApi';
 
+import { Link, NavLink, useLocation } from 'react-router-dom';
+
 interface PropiedadesBarraLateral {
-  menuActivo: string;
-  alSeleccionarMenu: (menu: string) => void;
   usuario: Usuario | null;
   alCerrarSesion: () => void;
 }
 
 export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
-  menuActivo,
-  alSeleccionarMenu,
   usuario,
   alCerrarSesion,
 }) => {
+  const location = useLocation();
   const nombreUsuario = usuario?.person
     ? `${usuario.person.firstName} ${usuario.person.lastName}`
     : 'Dr. Martín López';
@@ -48,6 +47,7 @@ export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
     { id: 'reportes', etiqueta: 'Reportes', icono: BarChart3 },
     { id: 'configuracion', etiqueta: 'Configuración', icono: Settings },
     { id: 'perfil', etiqueta: 'Perfil', icono: User },
+    { id: 'feriados', etiqueta: 'Feriados y Asuetos', icono: Calendar },
     { id: 'ayuda', etiqueta: 'Ayuda', icono: HelpCircle },
   ];
 
@@ -58,8 +58,8 @@ export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
       <div className="p-5 space-y-6 overflow-y-auto">
         
         {/* LOGO KINETURNOS */}
-        <div 
-          onClick={() => alSeleccionarMenu('inicio')}
+        <Link 
+          to="/"
           className="flex items-center gap-3 cursor-pointer group px-2"
         >
           <div className="w-10 h-10 rounded-2xl bg-[#598b76] flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
@@ -73,27 +73,28 @@ export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
               Gestión de turnos
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* LISTA DE MENU VERTICAL */}
         <nav className="space-y-1.5 pt-2">
           {itemsMenu.map((item) => {
             const Icono = item.icono;
-            const esActivo = menuActivo === item.id;
+            const ruta = item.id === 'inicio' ? '/' : `/${item.id}`;
+            const esActivo = location.pathname === ruta || (item.id === 'inicio' && location.pathname === '');
 
             return (
-              <button
+              <NavLink
                 key={item.id}
-                onClick={() => alSeleccionarMenu(item.id)}
-                className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                  esActivo
+                to={ruta}
+                className={({ isActive }) => `w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                  isActive || esActivo
                     ? 'bg-[#598b76] text-white shadow-md shadow-[#598b76]/20'
                     : 'text-[#4a5568] hover:bg-[#eae7df] hover:text-[#1a202c]'
                 }`}
               >
                 <Icono className={`w-5 h-5 ${esActivo ? 'text-white' : 'text-[#718096]'}`} />
                 <span>{item.etiqueta}</span>
-              </button>
+              </NavLink>
             );
           })}
         </nav>

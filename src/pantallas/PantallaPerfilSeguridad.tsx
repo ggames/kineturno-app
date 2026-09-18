@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { usoAutenticacion } from '../contexto/ContextoAutenticacion';
+import { useAutenticacion } from '../contexto/ContextoAutenticacion';
 import { servicioPersonas } from '../servicios/servicioPersonas';
 import { servicioAutenticacion } from '../servicios/servicioAutenticacion';
 import { User, Shield, Lock, Save } from 'lucide-react';
@@ -12,7 +12,7 @@ interface PropiedadesPantallaPerfilSeguridad {
 export const PantallaPerfilSeguridad: React.FC<PropiedadesPantallaPerfilSeguridad> = ({
   alMostrarNotificacion,
 }) => {
-  const { usuario, actualizarFotoPerfil } = usoAutenticacion();
+  const { usuario, actualizarFotoPerfil } = useAutenticacion();
 
   // Estados de formulario con datos reales del usuario autenticado
   const [nombre, setNombre] = useState<string>('');

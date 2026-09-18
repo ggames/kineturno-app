@@ -1,0 +1,443 @@
+npm notice run kineturnos-app@0.0.0 lint
+npm notice run oxlint
+
+  x Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+     ,-[src/pantallas/PantallaLogin.tsx:325:1]
+ 324 |   );
+ 325 | };
+     : ^
+     `----
+
+  ! react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+    ,-[src/contexto/ContextoAutenticacion.tsx:86:14]
+ 85 | 
+ 86 | export const usoAutenticacion = (): InterfazContextoAutenticacion => {
+    :              ^^^^^^^^^^^^^^^^
+ 87 |   const contexto = useContext(ContextoAutenticacion);
+    `----
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/contexto/ContextoAutenticacion.tsx:23:7]
+ 19 | 
+ 20 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 21 |     const usuarioActual = servicioAutenticacion.obtenerUsuarioActual();
+ 22 |     if (usuarioActual) {
+ 23 |       setUsuario(usuarioActual);
+    :       ^^^^^|^^^^
+    :            `-- Avoid calling setState() directly within an effect
+ 24 |     }
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  x react-hooks(rules-of-hooks): React Hook "useContext" is called in function "Anonymous" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use".
+    ,-[src/contexto/ContextoAutenticacion.tsx:87:20]
+ 85 |     
+ 86 | ,-> export const usoAutenticacion = (): InterfazContextoAutenticacion => {
+ 87 | |     const contexto = useContext(ContextoAutenticacion);
+    : |                      ^^^^^|^^^^
+    : |                           `-- Hook is called here
+ 88 | |     if (!contexto) {
+ 89 | |       throw new Error('usoAutenticacion debe usarse dentro de un ProveedorAutenticacion');
+ 90 | |     }
+ 91 | |     return contexto;
+ 92 | |-> };
+    : `---- Outer function
+    `----
+
+  ! react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+    ,-[src/pantallas/PantallaGestionFeriados.tsx:24:14]
+ 23 | 
+ 24 | export const formatearFechaDisplay = (fecha?: string): string => {
+    :              ^^^^^^^^^^^^^^^^^^^^^
+ 25 |   if (!fecha) return '-';
+    `----
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaGestionFeriados.tsx:68:5]
+ 66 | 
+ 67 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 68 |     cargarFeriados();
+    :     ^^^^^^^|^^^^^^
+    :            `-- Avoid calling setState() directly within an effect
+ 69 |   }, []);
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarFeriados'
+    ,-[src/pantallas/PantallaGestionFeriados.tsx:69:6]
+ 67 |   useEffect(() => {
+ 68 |     cargarFeriados();
+    :     ^^^^^^^|^^^^^^
+    :            `-- useEffect uses `cargarFeriados` here
+ 69 |   }, []);
+    :      ^^
+ 70 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaKineTurnosPaciente.tsx:91:5]
+ 89 | 
+ 90 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 91 |     cargarDatosPaciente();
+    :     ^^^^^^^^^|^^^^^^^^^
+    :              `-- Avoid calling setState() directly within an effect
+ 92 |   }, []);
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarDatosPaciente'
+    ,-[src/pantallas/PantallaKineTurnosPaciente.tsx:92:6]
+ 90 |   useEffect(() => {
+ 91 |     cargarDatosPaciente();
+    :     ^^^^^^^^^|^^^^^^^^^
+    :              `-- useEffect uses `cargarDatosPaciente` here
+ 92 |   }, []);
+    :      ^^
+ 93 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'agendas'
+     ,-[src/pantallas/PantallaKineTurnosPaciente.tsx:156:6]
+ 104 |       try {
+ 105 |         let agendaCoincidente = agendas.find(
+     :                                 ^^^|^^^
+     :                                    `-- useEffect uses `agendas` here
+ 106 |           (a) => a.professionalId === profesionalSeleccionadoId && (a.date ? a.date.substring(0, 10) : '') === fechaTurno.substring(0, 10)
+ 107 |         );
+ 108 | 
+ 109 |         if (!agendaCoincidente) {
+ 110 |           const listaAgendasBD = await servicioAgenda.obtenerAgendas().catch(() => []);
+ 111 |           setAgendas(listaAgendasBD);
+ 112 |           agendaCoincidente = listaAgendasBD.find(
+ 113 |             (a) => a.professionalId === profesionalSeleccionadoId && (a.date ? a.date.substring(0, 10) : '') === fechaTurno.substring(0, 10)
+ 114 |           );
+ 115 |         }
+ 116 | 
+ 117 |         if (cancelado) return;
+ 118 | 
+ 119 |         if (agendaCoincidente && agendaCoincidente.id) {
+ 120 |           const slotsBD = await servicioAgenda.obtenerSlotsDeAgenda(agendaCoincidente.id);
+ 121 |           if (!cancelado) {
+ 122 |             setSlotsDisponibles(slotsBD.filter((s) => s.currentBookings < s.maxCapacity && s.status !== 'BOOKED' && s.status !== 'BLOCKED' && s.status !== 'EXPIRED'));
+ 123 |           }
+ 124 |         } else {
+ 125 |           try {
+ 126 |             const nuevaAgenda = await servicioAgenda.crearAgendaDiaria({
+ 127 |               professionalId: profesionalSeleccionadoId,
+ 128 |               date: fechaTurno,
+ 129 |               startHour: 8,
+ 130 |               endHour: 18,
+ 131 |               maxCapacity: 6,
+ 132 |             });
+ 133 |             if (nuevaAgenda && nuevaAgenda.id) {
+ 134 |               const slotsBD = await servicioAgenda.obtenerSlotsDeAgenda(nuevaAgenda.id);
+ 135 |               if (!cancelado) {
+ 136 |                 setSlotsDisponibles(slotsBD.filter((s) => s.currentBookings < s.maxCapacity && s.status !== 'BOOKED' && s.status !== 'BLOCKED' && s.status !== 'EXPIRED'));
+ 137 |               }
+ 138 |             }
+ 139 |           } catch {
+ 140 |             const todosSlots = await servicioAgenda.obtenerTimeSlots().catch(() => []);
+ 141 |             if (!cancelado) {
+ 142 |               setSlotsDisponibles(todosSlots.filter((s) => s.currentBookings < s.maxCapacity && s.status !== 'BOOKED' && s.status !== 'BLOCKED' && s.status !== 'EXPIRED'));
+ 143 |             }
+ 144 |           }
+ 145 |         }
+ 146 |       } catch {
+ 147 |         if (!cancelado) setSlotsDisponibles([]);
+ 148 |       }
+ 149 |     };
+ 150 | 
+ 151 |     obtenerSlotsRealesPaciente();
+ 152 | 
+ 153 |     return () => {
+ 154 |       cancelado = true;
+ 155 |     };
+ 156 |   }, [profesionalSeleccionadoId, fechaTurno]);
+     :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 157 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaRegistroProfesionales.tsx:42:5]
+ 40 | 
+ 41 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 42 |     cargarProfesionales();
+    :     ^^^^^^^^^|^^^^^^^^^
+    :              `-- Avoid calling setState() directly within an effect
+ 43 |   }, []);
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarProfesionales'
+    ,-[src/pantallas/PantallaRegistroProfesionales.tsx:43:6]
+ 41 |   useEffect(() => {
+ 42 |     cargarProfesionales();
+    :     ^^^^^^^^^|^^^^^^^^^
+    :              `-- useEffect uses `cargarProfesionales` here
+ 43 |   }, []);
+    :      ^^
+ 44 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaAdministracionUsuarios.tsx:35:5]
+ 33 | 
+ 34 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 35 |     cargarPersonasBD();
+    :     ^^^^^^^^|^^^^^^^
+    :             `-- Avoid calling setState() directly within an effect
+ 36 |   }, []);
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarPersonasBD'
+    ,-[src/pantallas/PantallaAdministracionUsuarios.tsx:36:6]
+ 34 |   useEffect(() => {
+ 35 |     cargarPersonasBD();
+    :     ^^^^^^^^|^^^^^^^
+    :             `-- useEffect uses `cargarPersonasBD` here
+ 36 |   }, []);
+    :      ^^
+ 37 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaAgendaCalendario.tsx:70:5]
+ 68 | 
+ 69 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 70 |     cargarDatos();
+    :     ^^^^^|^^^^^
+    :          `-- Avoid calling setState() directly within an effect
+ 71 |   }, []);
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarDatos'
+    ,-[src/pantallas/PantallaAgendaCalendario.tsx:71:6]
+ 69 |   useEffect(() => {
+ 70 |     cargarDatos();
+    :     ^^^^^|^^^^^
+    :          `-- useEffect uses `cargarDatos` here
+ 71 |   }, []);
+    :      ^^
+ 72 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaPerfilSeguridad.tsx:34:7]
+ 31 |   // Inicializar con datos reales de la BD al montar el componente
+ 32 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 33 |     if (usuario) {
+ 34 |       setNombre(usuario.person?.firstName || '');
+    :       ^^^^|^^^^
+    :           `-- Avoid calling setState() directly within an effect
+ 35 |       setApellido(usuario.person?.lastName || '');
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/pantallas/PantallaGestionPacientes.tsx:77:5]
+ 75 | 
+ 76 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 77 |     cargarPacientes();
+    :     ^^^^^^^|^^^^^^^
+    :            `-- Avoid calling setState() directly within an effect
+ 78 |   }, []);
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+     ,-[src/pantallas/PantallaGestionPacientes.tsx:100:5]
+  98 |   // Resetear a página 1 si cambia la búsqueda
+  99 |   useEffect(() => {
+     :   ^^^^|^^^^
+     :       `-- This is the containing effect
+ 100 |     setPaginaActual(1);
+     :     ^^^^^^^|^^^^^^^
+     :            `-- Avoid calling setState() directly within an effect
+ 101 |   }, [filtroBusqueda, elementosPorPagina]);
+     `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarPacientes'
+    ,-[src/pantallas/PantallaGestionPacientes.tsx:78:6]
+ 76 |   useEffect(() => {
+ 77 |     cargarPacientes();
+    :     ^^^^^^^|^^^^^^^
+    :            `-- useEffect uses `cargarPacientes` here
+ 78 |   }, []);
+    :      ^^
+ 79 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+     ,-[src/pantallas/PantallaGestionTurnosStaff.tsx:108:5]
+ 106 | 
+ 107 |   useEffect(() => {
+     :   ^^^^|^^^^
+     :       `-- This is the containing effect
+ 108 |     cargarDatosControl();
+     :     ^^^^^^^^^|^^^^^^^^
+     :              `-- Avoid calling setState() directly within an effect
+ 109 |   }, []);
+     `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarDatosControl'
+     ,-[src/pantallas/PantallaGestionTurnosStaff.tsx:109:6]
+ 107 |   useEffect(() => {
+ 108 |     cargarDatosControl();
+     :     ^^^^^^^^^|^^^^^^^^
+     :              `-- useEffect uses `cargarDatosControl` here
+ 109 |   }, []);
+     :      ^^
+ 110 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has missing dependencies: 'agendas', and 'alMostrarNotificacion'
+     ,-[src/pantallas/PantallaGestionTurnosStaff.tsx:186:6]
+ 136 |       try {
+ 137 |         let agendaCoincidente = agendas.find(
+     :                                 ^^^^^^^
+ 138 |           (a) => a.professionalId === profesionalTurnoId && (a.date ? a.date.substring(0, 10) : '') === fechaTurno.substring(0, 10)
+ 139 |         );
+ 140 | 
+ 141 |         if (!agendaCoincidente) {
+ 142 |           const listaAgendasBD = await servicioAgenda.obtenerAgendas().catch(() => []);
+ 143 |           setAgendas(listaAgendasBD);
+ 144 |           agendaCoincidente = listaAgendasBD.find(
+ 145 |             (a) => a.professionalId === profesionalTurnoId && (a.date ? a.date.substring(0, 10) : '') === fechaTurno.substring(0, 10)
+ 146 |           );
+ 147 |         }
+ 148 | 
+ 149 |         if (agendaCoincidente && agendaCoincidente.id) {
+ 150 |           const slotsBD = await servicioAgenda.obtenerSlotsDeAgenda(agendaCoincidente.id);
+ 151 |           if (!cancelado) {
+ 152 |             setSlotsDisponibles(slotsBD);
+ 153 |           }
+ 154 |         } else {
+ 155 |           try {
+ 156 |             const nuevaAgenda = await servicioAgenda.crearAgendaDiaria({
+ 157 |               professionalId: profesionalTurnoId,
+ 158 |               date: fechaTurno,
+ 159 |               startHour: 8,
+ 160 |               endHour: 18,
+ 161 |               maxCapacity: 6,
+ 162 |             });
+ 163 |             if (nuevaAgenda && nuevaAgenda.id) {
+ 164 |               const slotsBD = await servicioAgenda.obtenerSlotsDeAgenda(nuevaAgenda.id);
+ 165 |               if (!cancelado) setSlotsDisponibles(slotsBD);
+ 166 |             }
+ 167 |           } catch {
+ 168 |             const todosSlots = await servicioAgenda.obtenerTimeSlots().catch(() => []);
+ 169 |             if (!cancelado) setSlotsDisponibles(todosSlots);
+ 170 |           }
+ 171 |         }
+ 172 |       } catch (err: any) {
+ 173 |         if (!cancelado) {
+ 174 |           alMostrarNotificacion('error', 'Error al cargar horarios', err.message || 'No se pudieron recuperar los horarios del backend.');
+     :           ^^^^^^^^^^^^^^^^^^^^^
+ 175 |         }
+ 176 |       } finally {
+ 177 |         if (!cancelado) setCargandoSlots(false);
+ 178 |       }
+ 179 |     };
+ 180 | 
+ 181 |     obtenerSlotsReales();
+ 182 | 
+ 183 |     return () => {
+ 184 |       cancelado = true;
+ 185 |     };
+ 186 |   }, [profesionalTurnoId, fechaTurno, feriados, mostrarModalNuevoTurno]);
+     :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 187 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+    ,-[src/pantallas/PantallaPanelControlDashboard.tsx:37:14]
+ 36 | 
+ 37 | export const formatearFechaDisplay = (fecha?: string): string => {
+    :              ^^^^^^^^^^^^^^^^^^^^^
+ 38 |   if (!fecha) return '-';
+    `----
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+     ,-[src/pantallas/PantallaPanelControlDashboard.tsx:123:5]
+ 121 | 
+ 122 |   useEffect(() => {
+     :   ^^^^|^^^^
+     :       `-- This is the containing effect
+ 123 |     cargarTurnosYHorariosPorFecha(fechaSeleccionada);
+     :     ^^^^^^^^^^^^^^|^^^^^^^^^^^^^^
+     :                   `-- Avoid calling setState() directly within an effect
+ 124 |   }, [fechaSeleccionada]);
+     `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'alMostrarNotificacion'
+     ,-[src/pantallas/PantallaPanelControlDashboard.tsx:100:6]
+  93 |       } catch (err: any) {
+  94 |         alMostrarNotificacion('error', 'Error al cargar datos', err.message || 'No se pudieron recuperar datos de la BD.');
+     :         ^^^^^^^^^^|^^^^^^^^^^
+     :                   `-- useEffect uses `alMostrarNotificacion` here
+  95 |       } finally {
+  96 |         setCargandoGeneral(false);
+  97 |       }
+  98 |     };
+  99 |     cargarDatosBase();
+ 100 |   }, []);
+     :      ^^
+ 101 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'cargarTurnosYHorariosPorFecha'
+     ,-[src/pantallas/PantallaPanelControlDashboard.tsx:124:6]
+ 122 |   useEffect(() => {
+ 123 |     cargarTurnosYHorariosPorFecha(fechaSeleccionada);
+     :     ^^^^^^^^^^^^^^|^^^^^^^^^^^^^^
+     :                   `-- useEffect uses `cargarTurnosYHorariosPorFecha` here
+ 124 |   }, [fechaSeleccionada]);
+     :      ^^^^^^^^^^^^^^^^^^^
+ 125 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+Found 25 warnings and 2 errors.
+Finished in 235ms on 35 files with 116 rules using 8 threads.

@@ -14,15 +14,15 @@ interface InterfazContextoAutenticacion {
 const ContextoAutenticacion = createContext<InterfazContextoAutenticacion | undefined>(undefined);
 
 export const ProveedorAutenticacion: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [cargando, setCargando] = useState<boolean>(true);
+  const [usuario, setUsuario] = useState<Usuario | null>(() => servicioAutenticacion.obtenerUsuarioActual());
+  const [cargando, setCargando] = useState<boolean>(false);
 
   useEffect(() => {
-    const usuarioActual = servicioAutenticacion.obtenerUsuarioActual();
-    if (usuarioActual) {
-      setUsuario(usuarioActual);
-    }
-    setCargando(false);
+    const manejarDesautorizado = () => {
+      setUsuario(null);
+    };
+    window.addEventListener('auth:unauthorized', manejarDesautorizado);
+    return () => window.removeEventListener('auth:unauthorized', manejarDesautorizado);
   }, []);
 
   const iniciarSesion = async (credenciales: PeticionLogin) => {
@@ -49,8 +49,8 @@ export const ProveedorAutenticacion: React.FC<{ children: React.ReactNode }> = (
     setCargando(true);
     try {
       await servicioAutenticacion.cerrarSesion();
-      setUsuario(null);
     } finally {
+      setUsuario(null);
       setCargando(false);
     }
   };
@@ -78,10 +78,10 @@ export const ProveedorAutenticacion: React.FC<{ children: React.ReactNode }> = (
   );
 };
 
-export const usoAutenticacion = (): InterfazContextoAutenticacion => {
+export function useAutenticacion(): InterfazContextoAutenticacion {
   const contexto = useContext(ContextoAutenticacion);
   if (!contexto) {
-    throw new Error('usoAutenticacion debe usarse dentro de un ProveedorAutenticacion');
+    throw new Error('useAutenticacion debe usarse dentro de un ProveedorAutenticacion');
   }
   return contexto;
-};
+}

@@ -8,6 +8,7 @@ export interface Feriado {
   id: string;
   date: string;
   type: TipoFeriado;
+  description?: string;
   partialStartTime?: string;
   partialEndTime?: string;
   clinic?: Clinica;
@@ -183,4 +184,13 @@ export interface PeticionCrearTurno {
   professionalId: string;
   timeSlotId: string;
   appointmentDate: string;
+}
+
+export interface PeticionCrearFeriado {
+  date: string;
+  type: TipoFeriado;
+  description?: string;
+  partialStartTime?: string;
+  partialEndTime?: string;
+  clinicId?: string;
 }

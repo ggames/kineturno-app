@@ -27,9 +27,10 @@ import { TablaHorariosDisponibles } from '../componentes/dashboard/TablaHorarios
 import type { BloqueHoraSlot } from '../utilidades/calculoDisponibilidad';
 import { obtenerFechaLocalISO, crearFechaLocal, esFinDeSemana } from '../utilidades/fechas';
 
+import { useNavigate } from 'react-router-dom';
+
 interface PropiedadesPantallaPanelControlDashboard {
   usuario: Usuario | null;
-  alSeleccionarMenu: (menu: string) => void;
   alMostrarNotificacion: (tipo: 'exito' | 'error' | 'advertencia' | 'info', titulo: string, mensaje: string) => void;
 }
 
@@ -45,9 +46,9 @@ export const formatearFechaDisplay = (fecha?: string): string => {
 
 export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelControlDashboard> = ({
   usuario,
-  alSeleccionarMenu,
   alMostrarNotificacion,
 }) => {
+  const navigate = useNavigate();
   const [turnosReales, setTurnosReales] = useState<Turno[]>([]);
   const [agendasReales, setAgendasReales] = useState<AgendaDiaria[]>([]);
   const [slotsReales, setSlotsReales] = useState<SlotHorario[]>([]);
@@ -712,7 +713,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
           </div>
 
           <button
-            onClick={() => alSeleccionarMenu('turnos')}
+            onClick={() => navigate('/turnos')}
             className="w-full py-3.5 rounded-2xl bg-[#598b76] hover:bg-[#487361] text-white font-bold text-sm shadow-md transition-all text-center flex items-center justify-center gap-2"
           >
             Ver gestión de turnos completa
@@ -755,7 +756,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
           </div>
 
           <button
-            onClick={() => alSeleccionarMenu('agenda')}
+            onClick={() => navigate('/agenda')}
             className="w-full py-3.5 rounded-2xl bg-[#598b76] hover:bg-[#487361] text-white font-bold text-sm shadow-md transition-all text-center flex items-center justify-center gap-2"
           >
             Ver calendario de agenda
@@ -771,7 +772,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
             Historial de turnos en PostgreSQL ({turnosReales.length})
           </h2>
           <button
-            onClick={() => alSeleccionarMenu('turnos')}
+            onClick={() => navigate('/turnos')}
             className="text-xs font-bold text-[#598b76] hover:underline flex items-center gap-1"
           >
             Ver listado completo
@@ -847,7 +848,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div
-            onClick={() => alSeleccionarMenu('perfil')}
+            onClick={() => navigate('/perfil')}
             className="bg-white p-6 rounded-3xl border border-[#e8e6df] shadow-sm hover:shadow-md hover:border-[#598b76] cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-3 group"
           >
             <div className="w-12 h-12 rounded-2xl bg-[#f0eee6] text-[#598b76] flex items-center justify-center group-hover:bg-[#598b76] group-hover:text-white transition-colors">
@@ -857,7 +858,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
           </div>
 
           <div
-            onClick={() => alSeleccionarMenu('agenda')}
+            onClick={() => navigate('/agenda')}
             className="bg-white p-6 rounded-3xl border border-[#e8e6df] shadow-sm hover:shadow-md hover:border-[#598b76] cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-3 group"
           >
             <div className="w-12 h-12 rounded-2xl bg-[#f0eee6] text-[#598b76] flex items-center justify-center group-hover:bg-[#598b76] group-hover:text-white transition-colors">
@@ -867,7 +868,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
           </div>
 
           <div
-            onClick={() => alSeleccionarMenu('servicios')}
+            onClick={() => navigate('/servicios')}
             className="bg-white p-6 rounded-3xl border border-[#e8e6df] shadow-sm hover:shadow-md hover:border-[#598b76] cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-3 group"
           >
             <div className="w-12 h-12 rounded-2xl bg-[#f0eee6] text-[#598b76] flex items-center justify-center group-hover:bg-[#598b76] group-hover:text-white transition-colors">

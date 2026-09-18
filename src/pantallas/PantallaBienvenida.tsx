@@ -1,15 +1,10 @@
 import React from 'react';
 import { Activity, Calendar, ShieldCheck, HeartPulse, Clock, Sparkles } from 'lucide-react';
 
-interface PropiedadesPantallaBienvenida {
-  alIngresar: () => void;
-  alRegistrarse: () => void;
-}
+import { useNavigate } from 'react-router-dom';
 
-export const PantallaBienvenida: React.FC<PropiedadesPantallaBienvenida> = ({
-  alIngresar,
-  alRegistrarse,
-}) => {
+export const PantallaBienvenida: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-[calc(100vh-80px)] flex flex-col justify-between bg-gradient-to-b from-beige-fondo via-beige-100/50 to-beige-fondo px-4 sm:px-6 py-12">
       <div className="max-w-5xl mx-auto w-full text-center space-y-8 my-auto">
@@ -33,7 +28,7 @@ export const PantallaBienvenida: React.FC<PropiedadesPantallaBienvenida> = ({
         {/* BOTONES DE ACCION */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <button
-            onClick={alIngresar}
+            onClick={() => navigate('/login')}
             className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-verde-principal hover:bg-emerald-700 text-white font-bold text-lg shadow-xl shadow-teal-700/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
           >
             <Calendar className="w-5 h-5" />
@@ -41,7 +36,7 @@ export const PantallaBienvenida: React.FC<PropiedadesPantallaBienvenida> = ({
           </button>
           
           <button
-            onClick={alRegistrarse}
+            onClick={() => navigate('/registro')}
             className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-beige-100 text-madera-700 font-bold text-lg border-2 border-madera-500/30 shadow-md hover:border-madera-500 transition-all flex items-center justify-center gap-3"
           >
             <HeartPulse className="w-5 h-5 text-madera-700" />

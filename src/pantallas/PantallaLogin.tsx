@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
-import { usoAutenticacion } from '../contexto/ContextoAutenticacion';
+import { useAutenticacion } from '../contexto/ContextoAutenticacion';
 import { User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft, Activity } from 'lucide-react';
 import type { PeticionRegistroPaciente } from '../esquemas/tiposApi';
 import fondoImagen from '../assets/fondo_login_kine.jpg';
 
+import { useNavigate } from 'react-router-dom';
+
 interface PropiedadesPantallaLogin {
   vistaInicial?: 'login' | 'registro';
-  alVolverBienvenida: () => void;
-  alIngresarExitoso: () => void;
   alMostrarNotificacion: (tipo: 'exito' | 'error' | 'advertencia', titulo: string, mensaje: string) => void;
 }
 
 export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
   vistaInicial = 'login',
-  alVolverBienvenida,
-  alIngresarExitoso,
   alMostrarNotificacion,
 }) => {
-  const { iniciarSesion, registrarsePaciente } = usoAutenticacion();
+  const navigate = useNavigate();
+  const { iniciarSesion, registrarsePaciente } = useAutenticacion();
   const [modo, setModo] = useState<'login' | 'registro'>(vistaInicial);
   const [cargando, setCargando] = useState<boolean>(false);
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
@@ -52,8 +51,8 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
     setCargando(true);
     try {
       await iniciarSesion({ email: emailLogin, password: passwordLogin });
+      navigate('/');
       alMostrarNotificacion('exito', '¡Bienvenido de nuevo!', 'Ingresaste a KineTurnos con éxito.');
-      alIngresarExitoso();
     } catch (err: any) {
       const mensaje = err.message || 'No se pudo iniciar sesión. Verificá tus credenciales e intentá de nuevo.';
       setErrorLocal(mensaje);
@@ -75,8 +74,8 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
     setCargando(true);
     try {
       await registrarsePaciente(formularioRegistro);
+      navigate('/');
       alMostrarNotificacion('exito', '¡Cuenta creada con éxito!', 'Tu cuenta de paciente ha sido creada.');
-      alIngresarExitoso();
     } catch (err: any) {
       const mensaje = err.message || 'No se pudo crear la cuenta de paciente. Intentá de nuevo.';
       setErrorLocal(mensaje);
@@ -87,7 +86,7 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-between bg-[#f6f3eb] font-sans overflow-y-auto">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#f6f3eb] font-sans overflow-y-auto py-12 z-50">
       
       {/* IMAGEN DE FONDO CÁLIDA Y BOTÁNICA */}
       <div className="absolute inset-0 z-0">
@@ -99,10 +98,10 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
         <div className="absolute inset-0 bg-gradient-to-b from-[#f6f3eb]/40 via-[#f6f3eb]/20 to-[#f6f3eb]/75" />
       </div>
 
-      {/* BOTON VOLVER Y HEADER SUPERIOR */}
-      <div className="relative z-10 p-6 flex justify-between items-center max-w-xl mx-auto w-full">
+      {/* BOTON VOLVER ABSOLUTO */}
+      <div className="absolute top-0 left-0 z-20 p-6">
         <button
-          onClick={alVolverBienvenida}
+          onClick={() => navigate('/bienvenida')}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md text-xs font-semibold text-[#4a5568] hover:text-[#1a202c] shadow-xs transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -110,8 +109,11 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
         </button>
       </div>
 
-      {/* SECCION CENTRAL: LOGO KINETURNOS & FRASE DE BIENVENIDA */}
-      <div className="relative z-10 text-center px-6 pt-4 pb-6 space-y-4 max-w-xl mx-auto w-full">
+      {/* CONTENEDOR CENTRAL (LOGO + TARJETA) */}
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center justify-center space-y-6">
+        
+        {/* SECCION CENTRAL: LOGO KINETURNOS & FRASE DE BIENVENIDA */}
+        <div className="text-center px-6 w-full space-y-4">
         
         {/* LOGO CIRCULAR KINESIOLOGICO (EMBLEMA DE LA ESPALDA/POSTURA DE LA IMAGEN) */}
         <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur-md border-2 border-[#598b76] mx-auto flex items-center justify-center shadow-lg shadow-[#598b76]/10">
@@ -131,10 +133,10 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
         </div>
       </div>
 
-      {/* TARJETA BLANCA FLOTANTE DE LOGIN DE LA IMAGEN DE REFERENCIA */}
-      <div className="relative z-10 max-w-md w-full mx-auto px-4 pb-8">
-        <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-white/80 space-y-6">
-          
+        {/* TARJETA BLANCA FLOTANTE DE LOGIN */}
+        <div className="w-full px-4">
+          <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-white/80 space-y-6">
+            
           {/* TITULO Y SUBTITULO VOSEO */}
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-black text-[#2d3748]">
@@ -316,6 +318,7 @@ export const PantallaLogin: React.FC<PropiedadesPantallaLogin> = ({
             </form>
           )}
 
+          </div>
         </div>
       </div>
     </div>
