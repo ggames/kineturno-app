@@ -93,12 +93,13 @@ export interface AgendaDiaria {
 }
 
 export interface HorarioSemanal {
-  id: string;
+  id?: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
   slotDurationMinutes: number;
   maxCapacityPerSlot: number;
+  isActive?: boolean;
 }
 
 export interface Tratamiento {

@@ -22,14 +22,31 @@ interface PropiedadesBarraLateral {
   alCerrarSesion: () => void;
 }
 
+/** Calcula las iniciales reales: primera letra del nombre + primera letra del apellido */
+function obtenerIniciales(usuario: Usuario | null): string {
+  if (usuario?.person?.firstName && usuario?.person?.lastName) {
+    return `${usuario.person.firstName[0]}${usuario.person.lastName[0]}`.toUpperCase();
+  }
+  if (usuario?.person?.firstName) {
+    return usuario.person.firstName.substring(0, 2).toUpperCase();
+  }
+  if (usuario?.email) {
+    return usuario.email[0].toUpperCase();
+  }
+  return 'U';
+}
+
 export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
   usuario,
   alCerrarSesion,
 }) => {
   const location = useLocation();
-  const nombreUsuario = usuario?.person
+
+  const nombreCompleto = usuario?.person?.firstName && usuario?.person?.lastName
     ? `${usuario.person.firstName} ${usuario.person.lastName}`
-    : 'Dr. Martín López';
+    : usuario?.person?.firstName
+    ? usuario.person.firstName
+    : usuario?.email || 'Usuario';
   
   const rolTexto = usuario?.role === 'ADMIN' 
     ? 'Administrador' 
@@ -37,17 +54,20 @@ export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
     ? 'Paciente' 
     : 'Staff / Profesional';
 
+  const iniciales = obtenerIniciales(usuario);
+
   const itemsMenu = [
     { id: 'inicio', etiqueta: 'Inicio', icono: Home },
     { id: 'turnos', etiqueta: 'Turnos', icono: Calendar },
-    { id: 'agenda', etiqueta: 'Agenda', icono: Clock },
     { id: 'pacientes', etiqueta: 'Pacientes', icono: Users },
+    { id: 'agenda', etiqueta: 'Agenda', icono: Clock },
+    { id: 'configuracion-horarios', etiqueta: 'Horarios de Atención', icono: Clock },
     { id: 'profesionales', etiqueta: 'Profesionales', icono: UserCheck },
     { id: 'servicios', etiqueta: 'Servicios', icono: Stethoscope },
     { id: 'reportes', etiqueta: 'Reportes', icono: BarChart3 },
-    { id: 'configuracion', etiqueta: 'Configuración', icono: Settings },
-    { id: 'perfil', etiqueta: 'Perfil', icono: User },
     { id: 'feriados', etiqueta: 'Feriados y Asuetos', icono: Calendar },
+    { id: 'perfil', etiqueta: 'Perfil', icono: User },
+    { id: 'configuracion', etiqueta: 'Configuración', icono: Settings },
     { id: 'ayuda', etiqueta: 'Ayuda', icono: HelpCircle },
   ];
 
@@ -100,33 +120,42 @@ export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
         </nav>
       </div>
 
-      {/* SECCION INFERIOR: USUARIO Y PLANTA DECORATIVA */}
+      {/* SECCION INFERIOR: DATOS PERSONA LOGUEADA + BOTON CERRAR SESION */}
       <div className="p-4 border-t border-[#e8e6df] bg-[#f3f1ea]/60 space-y-3">
-        <div className="flex items-center justify-between p-2 rounded-2xl bg-white/80 border border-[#e8e6df]">
-          <div className="flex items-center gap-3">
-            {usuario?.fotoPerfilUrl ? (
-              <img
-                src={usuario.fotoPerfilUrl}
-                alt={nombreUsuario}
-                className="w-10 h-10 rounded-full object-cover border border-[#598b76]"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-[#598b76] text-white flex items-center justify-center font-bold text-sm">
-                {nombreUsuario.substring(0, 2).toUpperCase()}
-              </div>
-            )}
-            <div className="text-left overflow-hidden">
-              <p className="text-xs font-bold text-[#2d3748] truncate">{nombreUsuario}</p>
-              <p className="text-[10px] text-[#718096] font-medium">{rolTexto}</p>
+        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-white/80 border border-[#e8e6df]">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {/* FOTO DE PERFIL O INICIALES REALES */}
+            <div className="relative shrink-0">
+              {usuario?.fotoPerfilUrl ? (
+                <img
+                  src={usuario.fotoPerfilUrl}
+                  alt={nombreCompleto}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-[#598b76]/40"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-[#598b76] text-white flex items-center justify-center font-bold text-sm">
+                  {iniciales}
+                </div>
+              )}
+              {/* INDICADOR ONLINE */}
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
+            </div>
+
+            {/* NOMBRE COMPLETO, EMAIL Y ROL */}
+            <div className="text-left overflow-hidden min-w-0">
+              <p className="text-xs font-bold text-[#2d3748] truncate">{nombreCompleto}</p>
+              <p className="text-[10px] text-[#718096] font-medium truncate">{usuario?.email}</p>
+              <p className="text-[9px] text-[#598b76] font-semibold uppercase tracking-wide">{rolTexto}</p>
             </div>
           </div>
 
+          {/* BOTON CERRAR SESION CON TOOLTIP */}
           <button
             onClick={alCerrarSesion}
-            title="Cerrar sesión"
-            className="p-1.5 rounded-xl text-[#e53e3e] hover:bg-rose-50 transition-colors"
+            title={`Cerrar sesión de ${nombreCompleto}`}
+            className="p-2 rounded-xl text-[#e53e3e] hover:bg-rose-50 hover:text-[#c53030] transition-all shrink-0 ml-1"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4.5 h-4.5" />
           </button>
         </div>
       </div>

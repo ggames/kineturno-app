@@ -17,6 +17,7 @@ import { PantallaRegistroProfesionales } from './pantallas/PantallaRegistroProfe
 import { PantallaAdministracionUsuarios } from './pantallas/PantallaAdministracionUsuarios';
 import { PantallaPerfilSeguridad } from './pantallas/PantallaPerfilSeguridad';
 import { PantallaGestionFeriados } from './pantallas/PantallaGestionFeriados';
+import { PantallaConfiguracionHorarios } from './pantallas/PantallaConfiguracionHorarios';
 import { HelpCircle, Stethoscope, BarChart3 } from 'lucide-react';
 
 const RutasSistema: React.FC<{ agregarNotificacion: any }> = ({ agregarNotificacion }) => {
@@ -108,6 +109,7 @@ const RutasSistema: React.FC<{ agregarNotificacion: any }> = ({ agregarNotificac
             <Route path="/agenda" element={<PantallaAgendaCalendario alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/pacientes" element={<PantallaGestionPacientes alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/profesionales" element={<PantallaRegistroProfesionales alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/configuracion-horarios" element={<PantallaConfiguracionHorarios alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/feriados" element={<PantallaGestionFeriados alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/servicios" element={renderizarServicios()} />
             <Route path="/reportes" element={renderizarReportes()} />

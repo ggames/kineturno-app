@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAutenticacion } from '../contexto/ContextoAutenticacion';
 import { servicioPersonas } from '../servicios/servicioPersonas';
 import { servicioAutenticacion } from '../servicios/servicioAutenticacion';
-import { User, Shield, Lock, Save } from 'lucide-react';
+import { clienteApi } from '../servicios/clienteApi';
+import { User, Shield, Lock, Save, Camera, Upload } from 'lucide-react';
 import type { Persona } from '../esquemas/tiposApi';
 
 interface PropiedadesPantallaPerfilSeguridad {
@@ -40,36 +41,94 @@ export const PantallaPerfilSeguridad: React.FC<PropiedadesPantallaPerfilSegurida
     }
   }, [usuario]);
 
+  const manejarSeleccionArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith('image/')) {
+      alMostrarNotificacion('advertencia', 'Formato no válido', 'Por favor, seleccioná un archivo de imagen (PNG, JPG, WEBP).');
+      return;
+    }
+
+    if (archivo.size > 5 * 1024 * 1024) {
+      alMostrarNotificacion('advertencia', 'Archivo muy grande', 'La imagen no debe superar los 5 MB.');
+      return;
+    }
+
+    const lector = new FileReader();
+    lector.onloadend = () => {
+      if (typeof lector.result === 'string') {
+        setFotoUrlInput(lector.result);
+        alMostrarNotificacion('info', 'Vista previa actualizada', 'Hacé clic en "Guardar Perfil" para confirmar el cambio de foto.');
+      }
+    };
+    lector.readAsDataURL(archivo);
+  };
+
   const manejarGuardarPerfilBD = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
 
     try {
-      if (usuario?.person?.id) {
-        const datosActualizados: Partial<Persona> = {
-          firstName: nombre,
-          lastName: apellido,
-          documentId: documentoId,
-          phone: telefono,
-          address: direccion,
-          email: usuario.email,
-        };
+      const datosPerfil = {
+        firstName: nombre,
+        lastName: apellido,
+        documentId: documentoId,
+        phone: telefono,
+        address: direccion,
+        fotoPerfilUrl: fotoUrlInput.trim(),
+      };
 
-        const personaPersistida = await servicioPersonas.actualizarPersona(usuario.person.id, datosActualizados);
-        servicioAutenticacion.actualizarPersonaUsuario(usuario, personaPersistida);
-      }
-
-      if (fotoUrlInput.trim()) {
-        actualizarFotoPerfil(fotoUrlInput.trim());
+      try {
+        const resProfile = await clienteApi.patch('/auth/profile', datosPerfil);
+        if (resProfile.data && usuario) {
+          const profileData = resProfile.data;
+          const personaData: Persona = profileData.person || {
+            id: profileData.personId || usuario.person?.id || 'person-id',
+            firstName: profileData.firstName || nombre,
+            lastName: profileData.lastName || apellido,
+            documentId: profileData.documentId || documentoId,
+            phone: profileData.phone || telefono,
+            address: profileData.address || direccion,
+            email: profileData.email || usuario.email,
+          };
+          servicioAutenticacion.actualizarPersonaUsuario(usuario, personaData);
+          if (profileData.fotoPerfilUrl) {
+            actualizarFotoPerfil(profileData.fotoPerfilUrl);
+          }
+        }
+      } catch (errProfile) {
+        if (usuario?.person?.id) {
+          const datosActualizados: Partial<Persona> = {
+            firstName: nombre,
+            lastName: apellido,
+            documentId: documentoId,
+            phone: telefono,
+            address: direccion,
+            email: usuario.email,
+          };
+          const personaPersistida = await servicioPersonas.actualizarPersona(
+            usuario.person.id,
+            datosActualizados
+          );
+          servicioAutenticacion.actualizarPersonaUsuario(usuario, personaPersistida);
+        }
+        if (fotoUrlInput.trim()) {
+          actualizarFotoPerfil(fotoUrlInput.trim());
+        }
       }
 
       alMostrarNotificacion(
         'exito',
         'Perfil guardado en Base de Datos',
-        'Tus datos personales fueron actualizados exitosamente en la base de datos backend.'
+        'Tus datos personales y foto de perfil fueron actualizados exitosamente.'
       );
     } catch (err: any) {
-      alMostrarNotificacion('error', 'Error al guardar perfil', err.message || 'No se pudieron actualizar los datos en el servidor.');
+      alMostrarNotificacion(
+        'error',
+        'Error al guardar perfil',
+        err.message || 'No se pudieron actualizar los datos en el servidor.'
+      );
     } finally {
       setCargando(false);
     }
@@ -130,30 +189,58 @@ export const PantallaPerfilSeguridad: React.FC<PropiedadesPantallaPerfilSegurida
 
           <form onSubmit={manejarGuardarPerfilBD} className="space-y-4">
             
-            {/* AVATAR PREVIEW */}
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#faf9f5] border border-[#eee2d3]">
-              {fotoUrlInput ? (
-                <img
-                  src={fotoUrlInput}
-                  alt="Avatar preview"
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-[#598b76] shadow-xs"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-2xl bg-[#598b76] text-white flex items-center justify-center font-bold text-xl border-2 border-white">
-                  {nombre ? nombre[0] : usuario?.email[0].toUpperCase()}
-                </div>
-              )}
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-[#2d3748] mb-1">
-                  URL de la Foto de Perfil / Avatar
+            {/* AVATAR PREVIEW CON SUBIDA DE ARCHIVO E INPUT URL */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-[#faf9f5] border border-[#eee2d3]">
+              <div className="relative group shrink-0">
+                {fotoUrlInput ? (
+                  <img
+                    src={fotoUrlInput}
+                    alt="Avatar preview"
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-[#598b76] shadow-sm"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-2xl bg-[#598b76] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm">
+                    {nombre ? nombre[0] : usuario?.email[0].toUpperCase()}
+                  </div>
+                )}
+
+                {/* BOTON SOBREPUESTO TIPO CAMARA PARA SUBIR ARCHIVO */}
+                <label className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-[#598b76] hover:bg-[#487361] text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition-all">
+                  <Camera className="w-4 h-4" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={manejarSeleccionArchivo}
+                    className="hidden"
+                  />
                 </label>
+              </div>
+
+              <div className="flex-1 w-full space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-[#2d3748]">
+                    Foto de Perfil / Avatar
+                  </label>
+                  <label className="text-[11px] font-bold text-[#598b76] hover:underline cursor-pointer flex items-center gap-1">
+                    <Upload className="w-3.5 h-3.5" />
+                    Subir Imagen
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={manejarSeleccionArchivo}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
                 <input
                   type="url"
                   value={fotoUrlInput}
                   onChange={(e) => setFotoUrlInput(e.target.value)}
-                  placeholder="https://..."
+                  placeholder="Pegá una URL de imagen o seleccioná un archivo..."
                   className="w-full px-3 py-2 rounded-xl border border-[#e2e8f0] text-xs focus:outline-none focus:border-[#598b76] bg-white"
                 />
+                <p className="text-[10px] text-[#718096]">Formatos soportados: PNG, JPG, WEBP (Máx 5MB).</p>
               </div>
             </div>
 

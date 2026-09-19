@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Ban
 } from 'lucide-react';
-import type { Usuario, Turno, AgendaDiaria, SlotHorario, Profesional, Paciente, Feriado } from '../esquemas/tiposApi';
+import type { Usuario, Turno, AgendaDiaria, SlotHorario, Profesional, Paciente, Feriado, HorarioSemanal } from '../esquemas/tiposApi';
 import { servicioTurnos } from '../servicios/servicioTurnos';
 import { servicioAgenda } from '../servicios/servicioAgenda';
 import { servicioProfesionales } from '../servicios/servicioProfesionales';
@@ -52,6 +52,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
   const [turnosReales, setTurnosReales] = useState<Turno[]>([]);
   const [agendasReales, setAgendasReales] = useState<AgendaDiaria[]>([]);
   const [slotsReales, setSlotsReales] = useState<SlotHorario[]>([]);
+  const [horariosSemanales, setHorariosSemanales] = useState<HorarioSemanal[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [feriados, setFeriados] = useState<Feriado[]>([]);
@@ -79,14 +80,16 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
     const cargarDatosBase = async () => {
       setCargandoGeneral(true);
       try {
-        const [listaPros, listaPacs, listaFeriados] = await Promise.all([
+        const [listaPros, listaPacs, listaFeriados, listaHorariosSem] = await Promise.all([
           servicioProfesionales.obtenerProfesionales().catch(() => []),
           servicioPacientes.obtenerPacientes().catch(() => []),
           servicioFeriados.obtenerFeriados().catch(() => []),
+          servicioAgenda.obtenerHorariosSemanales().catch(() => []),
         ]);
         setProfesionales(listaPros);
         setPacientes(listaPacs);
         setFeriados(listaFeriados);
+        setHorariosSemanales(listaHorariosSem);
 
         if (listaPros.length > 0) setProfesionalIdReserva(listaPros[0].id);
         if (listaPacs.length > 0) setPacienteIdReserva(listaPacs[0].id);
@@ -103,15 +106,19 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
   const cargarTurnosYHorariosPorFecha = async (fechaConsultar: string) => {
     setCargandoHorarios(true);
     try {
-      const [listaTurnos, listaAgendas, listaSlots] = await Promise.all([
+      const [listaTurnos, listaAgendas, listaSlots, listaHorariosSem] = await Promise.all([
         servicioTurnos.obtenerTurnos().catch(() => []),
         servicioAgenda.obtenerAgendasDiarias().catch(() => []),
         servicioAgenda.obtenerTimeSlots().catch(() => []),
+        servicioAgenda.obtenerHorariosSemanales().catch(() => []),
       ]);
 
       setTurnosReales(listaTurnos);
       setAgendasReales(listaAgendas);
       setSlotsReales(listaSlots);
+      if (listaHorariosSem.length > 0) {
+        setHorariosSemanales(listaHorariosSem);
+      }
     } catch (err: any) {
       alMostrarNotificacion('error', 'Error al cargar fecha', err.message || `No se pudieron cargar los horarios para la fecha ${fechaConsultar}.`);
     } finally {
@@ -129,16 +136,33 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
     ? usuario.email.split('@')[0].replace('.', ' ').replace(/^./, (str) => str.toUpperCase())
     : 'Lic. Kinesiología';
 
-  // Funciones auxiliares para detectar feriados y fines de semana
+  // Funciones auxiliares para detectar feriados y días bloqueados según configuración semanal
   const esFeriado = (fechaISO: string): Feriado | undefined => {
     return feriados.find((f) => f.date === fechaISO || f.date?.startsWith(fechaISO));
   };
 
   const esDiaBloqueado = (fechaISO: string): { bloqueado: boolean; motivo: string } => {
+    const feriado = esFeriado(fechaISO);
+    if (feriado && feriado.type === 'TOTAL') {
+      return { bloqueado: true, motivo: 'Feriado' };
+    }
+
+    const fechaLocal = crearFechaLocal(fechaISO);
+    const jsDay = fechaLocal.getDay(); // 0=Domingo, 6=Sábado
+    const isoWeekday = jsDay === 0 ? 7 : jsDay;
+
+    const horarioConfig = horariosSemanales.find((h) => h.dayOfWeek === isoWeekday);
+    if (horarioConfig) {
+      if (!horarioConfig.isActive) {
+        const nombreDia = jsDay === 0 ? 'Domingo' : jsDay === 6 ? 'Sábado' : 'Sin atención';
+        return { bloqueado: true, motivo: nombreDia };
+      }
+      return { bloqueado: false, motivo: '' };
+    }
+
     const fds = esFinDeSemana(fechaISO);
     if (fds) return { bloqueado: true, motivo: fds };
-    const feriado = esFeriado(fechaISO);
-    if (feriado && feriado.type === 'TOTAL') return { bloqueado: true, motivo: 'Feriado' };
+
     return { bloqueado: false, motivo: '' };
   };
 
@@ -173,13 +197,39 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
   const fechaObjSeleccionada = crearFechaLocal(fechaSeleccionada);
   const mesAnoTexto = fechaObjSeleccionada.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 
-  // Construir Bloques Horarios integrales (Slots completos sin división en sub-solapas)
+  // Construir Bloques Horarios integrales dinámicos por día de la semana y fecha
   const construirBloquesHorariosBD = (): { bloques: BloqueHoraSlot[]; agendaExisteBD: boolean; diaBloqueado: boolean; motivoDiaBloqueado: string } => {
-    const horasBase = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
-    
     const { bloqueado: diaBloqueado, motivo: motivoDiaBloqueado } = esDiaBloqueado(fechaSeleccionada);
     const feriadoParcial = esFeriadoParcial(fechaSeleccionada);
-    
+
+    const fechaLocal = crearFechaLocal(fechaSeleccionada);
+    const jsDay = fechaLocal.getDay();
+    const isoWeekday = jsDay === 0 ? 7 : jsDay;
+
+    const configSemanal = horariosSemanales.find((h) => h.dayOfWeek === isoWeekday);
+
+    const startTimeStr = configSemanal?.startTime ? configSemanal.startTime.substring(0, 5) : '08:00';
+    const endTimeStr = configSemanal?.endTime ? configSemanal.endTime.substring(0, 5) : '18:00';
+    const slotDuration = configSemanal?.slotDurationMinutes || 60;
+    const defaultCapacity = configSemanal?.maxCapacityPerSlot || 6;
+
+    // Generar franjas de horarios dinámicas según la configuración del día de la semana
+    const [startH, startM] = startTimeStr.split(':').map(Number);
+    const [endH, endM] = endTimeStr.split(':').map(Number);
+    const totalStartMins = (startH || 8) * 60 + (startM || 0);
+    const totalEndMins = (endH || 18) * 60 + (endM || 0);
+
+    const horasGeneradas: string[] = [];
+    for (let m = totalStartMins; m + slotDuration <= totalEndMins; m += slotDuration) {
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      horasGeneradas.push(`${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
+    }
+
+    if (horasGeneradas.length === 0 && !diaBloqueado) {
+      horasGeneradas.push('08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00');
+    }
+
     const agendasDelDia = agendasReales.filter((a) => {
       const d = a.date ? (typeof a.date === 'string' ? a.date.substring(0, 10) : '') : '';
       return d === fechaSeleccionada;
@@ -193,9 +243,27 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
       return fechaTurnoStr === fechaSeleccionada;
     });
 
-    const bloques: BloqueHoraSlot[] = horasBase.map((horaInicioStr) => {
-      const horaNum = parseInt(horaInicioStr.split(':')[0], 10);
-      const horaFinStr = `${(horaNum + 1).toString().padStart(2, '0')}:00`;
+    const slotsDelDiaBD = slotsReales.filter((s) => {
+      const slotDate = s.agenda?.date ? (typeof s.agenda.date === 'string' ? s.agenda.date.substring(0, 10) : '') : '';
+      return slotDate === fechaSeleccionada || (slotDate === '' && agendaExisteBD);
+    });
+
+    // Incluir cualquier hora proveniente de slots BD para la fecha seleccionada
+    const todasLasHorasSet = new Set<string>(horasGeneradas);
+    slotsDelDiaBD.forEach((s) => {
+      if (s.startTime) {
+        todasLasHorasSet.add(s.startTime.substring(0, 5));
+      }
+    });
+
+    const horasFinales = Array.from(todasLasHorasSet).sort();
+
+    const bloques: BloqueHoraSlot[] = horasFinales.map((horaInicioStr) => {
+      const [hIni, mIni] = horaInicioStr.split(':').map(Number);
+      const totalFinMins = hIni * 60 + (mIni || 0) + slotDuration;
+      const hFin = Math.floor(totalFinMins / 60);
+      const mFin = totalFinMins % 60;
+      const horaFinStr = `${hFin.toString().padStart(2, '0')}:${mFin.toString().padStart(2, '0')}`;
       const rangoTexto = `${horaInicioStr} - ${horaFinStr} hs`;
 
       // Feriado parcial
@@ -203,13 +271,12 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
       if (feriadoParcial && feriadoParcial.partialStartTime && feriadoParcial.partialEndTime) {
         const horaBloqueo = parseInt(feriadoParcial.partialStartTime.split(':')[0], 10);
         const horaFinBloqueo = parseInt(feriadoParcial.partialEndTime.split(':')[0], 10);
-        bloqueEnFeriadoParcial = horaNum >= horaBloqueo && horaNum < horaFinBloqueo;
+        bloqueEnFeriadoParcial = hIni >= horaBloqueo && hIni < horaFinBloqueo;
       }
 
       // Check if slot is expired (past date/time)
       const now = new Date();
       const slotEndDateTime = crearFechaLocal(fechaSeleccionada);
-      const [hFin, mFin] = horaFinStr.split(':').map(Number);
       slotEndDateTime.setHours(hFin, mFin, 0, 0);
       const slotVencido = slotEndDateTime.getTime() < now.getTime();
 
@@ -217,11 +284,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
       const motivoBloqueo = diaBloqueado ? motivoDiaBloqueado : bloqueEnFeriadoParcial ? 'Feriado Parcial' : slotVencido ? 'Turno Finalizado' : '';
 
       // Coincidencia con Slot de BD para la fecha seleccionada
-      const slotBD = slotsReales.find((s) => {
-        const slotStart = s.startTime?.substring(0, 5);
-        const slotDate = s.agenda?.date ? (typeof s.agenda.date === 'string' ? s.agenda.date.substring(0, 10) : '') : '';
-        return slotStart === horaInicioStr && (slotDate === '' || slotDate === fechaSeleccionada);
-      });
+      const slotBD = slotsDelDiaBD.find((s) => s.startTime?.substring(0, 5) === horaInicioStr);
 
       // Buscar turnos asociados a esta hora
       const turnosDeLaHora = turnosDelDia.filter((t) => {
@@ -230,7 +293,7 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
         return slotStart ? slotStart.startsWith(horaInicioStr) : false;
       });
 
-      const maxCapacity = (!slotBD?.maxCapacity || slotBD.maxCapacity === 1) ? 6 : slotBD.maxCapacity;
+      const maxCapacity = slotBD?.maxCapacity || defaultCapacity;
       const currentBookings = Math.max(slotBD?.currentBookings ?? 0, turnosDeLaHora.length);
       const disponiblesCount = esBloqueado ? 0 : Math.max(0, maxCapacity - currentBookings);
 

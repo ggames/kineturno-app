@@ -34,6 +34,16 @@ export const servicioAgenda = {
     return respuesta.data;
   },
 
+  async guardarHorariosSemanalesLote(horarios: Partial<HorarioSemanal>[]): Promise<HorarioSemanal[]> {
+    try {
+      const respuesta = await clienteApi.post<HorarioSemanal[]>('/weekly-schedule/bulk', horarios);
+      return respuesta.data;
+    } catch {
+      const respuesta = await clienteApi.put<HorarioSemanal[]>('/weekly-schedule/bulk', horarios);
+      return respuesta.data;
+    }
+  },
+
   async obtenerSlotsDeAgenda(agendaId: string): Promise<SlotHorario[]> {
     const respuesta = await clienteApi.get<SlotHorario[]>(`/agenda/${agendaId}/slots`);
     return respuesta.data;
