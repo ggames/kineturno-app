@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3,
   TrendingUp,
-  TrendingDown,
   Users,
   UserX,
   Calendar,
@@ -135,30 +134,34 @@ const IndicadorCircular: React.FC<{
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <svg width={tamaño} height={tamaño} className="transform -rotate-90">
-        <circle
-          cx={tamaño / 2}
-          cy={tamaño / 2}
-          r={radio}
-          fill="none"
-          stroke="#e8e6df"
-          strokeWidth="6"
-        />
-        <circle
-          cx={tamaño / 2}
-          cy={tamaño / 2}
-          r={radio}
-          fill="none"
-          stroke={color}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={circunferencia}
-          strokeDashoffset={offset}
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center justify-center" style={{ width: tamaño, height: tamaño }}>
-        <span className="text-lg font-extrabold text-[#1a202c]">{porcentaje}%</span>
+      {/* Wrapper relativo para superponer el texto centrado sobre el SVG */}
+      <div className="relative flex items-center justify-center" style={{ width: tamaño, height: tamaño }}>
+        <svg width={tamaño} height={tamaño} className="transform -rotate-90">
+          <circle
+            cx={tamaño / 2}
+            cy={tamaño / 2}
+            r={radio}
+            fill="none"
+            stroke="#e8e6df"
+            strokeWidth="6"
+          />
+          <circle
+            cx={tamaño / 2}
+            cy={tamaño / 2}
+            r={radio}
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circunferencia}
+            strokeDashoffset={offset}
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+        {/* Texto superpuesto, centrado dentro del SVG */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-base font-extrabold text-[#1a202c]">{porcentaje}%</span>
+        </div>
       </div>
       <span className="text-[10px] font-semibold text-[#718096] text-center leading-tight">{etiqueta}</span>
     </div>
@@ -432,27 +435,21 @@ function renderConsolidado(
         <div className="bg-white rounded-2xl border border-[#e8e6df] p-6 shadow-sm">
           <h3 className="text-sm font-bold text-[#1a202c] mb-5">Indicadores Generales</h3>
           <div className="flex justify-around">
-            <div className="relative">
-              <IndicadorCircular
-                porcentaje={consolidado.attendanceRate}
-                etiqueta="Asistencia"
-                color="#598b76"
-              />
-            </div>
-            <div className="relative">
-              <IndicadorCircular
-                porcentaje={consolidado.occupancyRate}
-                etiqueta="Ocupación"
-                color="#3b82f6"
-              />
-            </div>
-            <div className="relative">
-              <IndicadorCircular
-                porcentaje={100 - consolidado.absenteeismRate}
-                etiqueta="Compromiso"
-                color="#f59e0b"
-              />
-            </div>
+            <IndicadorCircular
+              porcentaje={consolidado.attendanceRate}
+              etiqueta="Asistencia"
+              color="#598b76"
+            />
+            <IndicadorCircular
+              porcentaje={consolidado.occupancyRate}
+              etiqueta="Ocupación"
+              color="#3b82f6"
+            />
+            <IndicadorCircular
+              porcentaje={100 - consolidado.absenteeismRate}
+              etiqueta="Compromiso"
+              color="#f59e0b"
+            />
           </div>
         </div>
 
@@ -533,7 +530,8 @@ function renderConsolidado(
           </div>
           <div className="flex items-end gap-2 border-b border-[#f3f1ea] pb-2" style={{ minHeight: '160px' }}>
             {ausentismo.monthlyBreakdown.map((mes) => {
-              const maxVal = Math.max(...ausentismo.monthlyBreakdown.map(m => m.total));
+              // Usar reduce en vez de spread para evitar stack overflow con arrays grandes
+              const maxVal = ausentismo.monthlyBreakdown.reduce((acc, m) => Math.max(acc, m.total), 0);
               return (
                 <BarraGrafico
                   key={mes.month}
@@ -628,11 +626,11 @@ function renderAusentismo(ausentismo: ReporteAusentismo | null) {
                         <span className="text-[9px] font-bold text-white">{mes.attendanceRate}%</span>
                       )}
                     </div>
-                    {/* Parte de ausentes */}
-                    {(mes.noShow + mes.absent) > 0 && (
+                    {/* Parte de ausentes: guardar contra división por cero */}
+                    {(mes.noShow + mes.absent) > 0 && (mes.total - mes.cancelled) > 0 && (
                       <div
                         className="absolute top-0 right-0 h-full bg-rose-400/80 rounded-r-lg"
-                        style={{ width: `${((mes.noShow + mes.absent) / (mes.total - mes.cancelled)) * 100}%` }}
+                        style={{ width: `${Math.min(((mes.noShow + mes.absent) / (mes.total - mes.cancelled)) * 100, 100)}%` }}
                       />
                     )}
                   </div>
@@ -665,7 +663,16 @@ function renderAusentismo(ausentismo: ReporteAusentismo | null) {
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-[10px] font-bold">
-                          {paciente.patientName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                          {paciente.patientName
+                            ? paciente.patientName
+                                .trim()
+                                .split(/\s+/)
+                                .filter(Boolean)
+                                .map((n) => n[0])
+                                .join('')
+                                .substring(0, 2)
+                                .toUpperCase()
+                            : '?'}
                         </div>
                         <span className="text-xs font-semibold text-[#2d3748]">{paciente.patientName}</span>
                       </div>
@@ -763,7 +770,8 @@ function renderOcupacion(ocupacion: ReporteOcupacion | null) {
           </div>
           <div className="flex items-end gap-2 border-b border-[#f3f1ea] pb-2" style={{ minHeight: '160px' }}>
             {ocupacion.monthlyBreakdown.map((mes) => {
-              const maxVal = Math.max(...ocupacion.monthlyBreakdown.map(m => m.totalSlots));
+              // Usar reduce en vez de spread para evitar stack overflow con arrays grandes
+              const maxVal = ocupacion.monthlyBreakdown.reduce((acc, m) => Math.max(acc, m.totalSlots), 0);
               return (
                 <BarraGrafico
                   key={mes.month}
