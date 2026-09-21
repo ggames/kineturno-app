@@ -10,6 +10,7 @@ import {
   Settings, 
   User, 
   HelpCircle,
+  ShieldCheck,
   Sprout,
   LogOut
 } from 'lucide-react';
@@ -60,6 +61,7 @@ export const BarraLateral: React.FC<PropiedadesBarraLateral> = ({
     { id: 'inicio', etiqueta: 'Inicio', icono: Home },
     { id: 'turnos', etiqueta: 'Turnos', icono: Calendar },
     { id: 'pacientes', etiqueta: 'Pacientes', icono: Users },
+    { id: 'obra-social', etiqueta: 'Obra Social', icono: ShieldCheck },
     { id: 'agenda', etiqueta: 'Agenda', icono: Clock },
     { id: 'configuracion-horarios', etiqueta: 'Horarios de Atención', icono: Clock },
     { id: 'profesionales', etiqueta: 'Profesionales', icono: UserCheck },

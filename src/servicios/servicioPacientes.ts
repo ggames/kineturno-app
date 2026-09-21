@@ -28,9 +28,14 @@ export const servicioPacientes = {
     return respuesta.data;
   },
 
-  async actualizarPaciente(personaId: string, datosPersona: Partial<PeticionCrearPacienteDirecto>): Promise<any> {
-    const respuesta = await clienteApi.put(`/persons/${personaId}`, datosPersona);
-    return respuesta.data;
+  async actualizarPaciente(id: string, datos: Partial<PeticionCrearPacienteDirecto>): Promise<any> {
+    try {
+      const respuesta = await clienteApi.put(`/patients/${id}`, datos);
+      return respuesta.data;
+    } catch {
+      const respuesta = await clienteApi.put(`/persons/${id}`, datos);
+      return respuesta.data;
+    }
   },
 
   async eliminarPaciente(personaId: string): Promise<void> {

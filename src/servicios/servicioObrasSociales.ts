@@ -15,5 +15,14 @@ export const servicioObrasSociales = {
   async crearObraSocial(datos: { name: string; coverageDetails?: string }): Promise<ObraSocial> {
     const respuesta = await clienteApi.post<ObraSocial>('/health-insurances', datos);
     return respuesta.data;
+  },
+
+  async actualizarObraSocial(id: string, datos: { name?: string; coverageDetails?: string }): Promise<ObraSocial> {
+    const respuesta = await clienteApi.put<ObraSocial>(`/health-insurances/${id}`, datos);
+    return respuesta.data;
+  },
+
+  async eliminarObraSocial(id: string): Promise<void> {
+    await clienteApi.delete(`/health-insurances/${id}`);
   }
 };

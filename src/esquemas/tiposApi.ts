@@ -1,7 +1,7 @@
 // Contratos de tipos de la API Backend NestJS en idioma Español Clínico
 export type RolUsuario = 'ADMIN' | 'STAFF' | 'PROFESSIONAL' | 'PATIENT';
 export type Genero = 'MALE' | 'FEMALE' | 'OTHER' | 'NOT_SPECIFIED';
-export type EstadoTurno = 'SCHEDULED' | 'CANCELLED' | 'COMPLETED' | 'CONFIRMED' | 'PENDING';
+export type EstadoTurno = 'SCHEDULED' | 'CANCELLED' | 'COMPLETED' | 'CONFIRMED' | 'PENDING' | 'NO_SHOW' | 'ABSENT';
 export type TipoFeriado = 'TOTAL' | 'PARTIAL';
 
 export interface Feriado {

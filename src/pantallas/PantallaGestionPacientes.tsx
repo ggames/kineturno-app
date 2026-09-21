@@ -127,7 +127,7 @@ export const PantallaGestionPacientes: React.FC<PropiedadesPantallaGestionPacien
       address: paciente.person?.address || '',
       emergencyContactName: paciente.person?.emergencyContactName || '',
       emergencyContactPhone: paciente.person?.emergencyContactPhone || '',
-      obraSocialId: paciente.obraSocialId || paciente.healthInsuranceId || '',
+      obraSocialId: paciente.obraSocialId || paciente.healthInsuranceId || paciente.obraSocial?.id || paciente.healthInsurance?.id || '',
     });
     setMostrarModalForm(true);
   };
@@ -141,13 +141,22 @@ export const PantallaGestionPacientes: React.FC<PropiedadesPantallaGestionPacien
 
     setGuardando(true);
     try {
-      if (pacienteAEditar && pacienteAEditar.personId) {
-        // Editar existente vía PUT /persons/{id}
-        await servicioPacientes.actualizarPaciente(pacienteAEditar.personId, formulario);
-        alMostrarNotificacion('exito', 'Paciente Actualizado', 'Los datos del paciente fueron actualizados en la BD.');
+      const datosAEnviar = {
+        ...formulario,
+        personId: pacienteAEditar?.personId || pacienteAEditar?.person?.id,
+        healthInsuranceId: formulario.obraSocialId,
+      };
+
+      if (pacienteAEditar) {
+        const idTarget = pacienteAEditar.id || pacienteAEditar.personId || '';
+        if (!idTarget) {
+          alMostrarNotificacion('error', 'Error', 'El paciente no posee un identificador válido.');
+          return;
+        }
+        await servicioPacientes.actualizarPaciente(idTarget, datosAEnviar);
+        alMostrarNotificacion('exito', 'Paciente Actualizado', 'Los datos del paciente y su obra social fueron actualizados en la BD.');
       } else {
-        // Crear nuevo paciente sin pedir contraseña vía POST /patients
-        await servicioPacientes.crearPacienteDirecto(formulario);
+        await servicioPacientes.crearPacienteDirecto(datosAEnviar);
         alMostrarNotificacion('exito', 'Paciente Creado', 'El nuevo paciente fue registrado exitosamente en la BD.');
       }
 
@@ -273,7 +282,10 @@ export const PantallaGestionPacientes: React.FC<PropiedadesPantallaGestionPacien
                   const telefono = p.person?.phone || '-';
                   const email = p.person?.email || '-';
                   const direccion = p.person?.address || '-';
-                  const obraNombre = p.obraSocial?.name || p.healthInsurance?.name || 'Particular / Sin Obra Social';
+
+                  const obraId = p.obraSocialId || p.healthInsuranceId || p.obraSocial?.id || p.healthInsurance?.id;
+                  const osEncontrada = obrasSociales.find((os) => os.id === obraId);
+                  const obraNombre = p.obraSocial?.name || p.healthInsurance?.name || osEncontrada?.name || 'Particular / Sin Obra Social';
 
                   return (
                     <tr key={p.id} className="hover:bg-[#faf9f5] transition-colors">

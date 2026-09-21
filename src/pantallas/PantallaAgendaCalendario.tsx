@@ -8,7 +8,8 @@ import {
   User, 
   ChevronLeft, 
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import type { Turno, Profesional, AgendaDiaria } from '../esquemas/tiposApi';
 import { servicioTurnos } from '../servicios/servicioTurnos';
@@ -148,6 +149,31 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
     }
   };
 
+  const marcarInasistencia = async () => {
+    if (!turnoSeleccionado) return;
+    try {
+      await servicioTurnos.actualizarEstadoTurno(turnoSeleccionado.id, 'NO_SHOW');
+      setTurnos((prev) =>
+        prev.map((t) => (t.id === turnoSeleccionado.id ? { ...t, status: 'NO_SHOW' } : t))
+      );
+      alMostrarNotificacion(
+        'info',
+        'Inasistencia Registrada',
+        'Se registró la inasistencia del paciente en este turno (marcado en amarillo).'
+      );
+      cargarDatos();
+    } catch (err: any) {
+      alMostrarNotificacion(
+        'error',
+        'Error al registrar inasistencia',
+        err.message || 'No se pudo registrar la inasistencia.'
+      );
+    } finally {
+      setMostrarModalDetalle(false);
+      setTurnoSeleccionado(null);
+    }
+  };
+
   if (cargando) {
     return <EstadoCarga mensaje="Cargando calendario y disponibilidad desde PostgreSQL..." pantallaCompleta />;
   }
@@ -248,6 +274,7 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
             <option value="SCHEDULED">Programados</option>
             <option value="PENDING">Pendientes</option>
             <option value="COMPLETED">Completados</option>
+            <option value="NO_SHOW">Inasistencias (No asistió)</option>
             <option value="CANCELLED">Cancelados</option>
           </select>
         </div>
@@ -270,7 +297,11 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {horasFijas.map((hora) => {
-              const turnosHora = turnosFiltrados.filter((t) => t.timeSlot?.startTime?.startsWith(hora));
+              const turnosHora = turnosFiltrados.filter((t) => {
+                if (t.status === 'CANCELLED') return false;
+                const slotStart = t.timeSlot?.startTime || (t as any).startTime || '';
+                return slotStart.startsWith(hora) || slotStart.startsWith(hora.split(':')[0]);
+              });
               const hayOcupacion = turnosHora.length > 0;
 
               return (
@@ -283,41 +314,76 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                         hayOcupacion
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-[#eaf3ee] text-[#234e3d]'
+                          ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                          : 'bg-[#eaf3ee] text-[#234e3d] border border-[#d2e4d9]'
                       }`}
                     >
-                      {hayOcupacion ? `${turnosHora.length} Reservado` : 'Disponible'}
+                      {hayOcupacion ? `${turnosHora.length} Reservado${turnosHora.length > 1 ? 's' : ''}` : 'Disponible'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-1.5">
-                    {[0, 10, 20, 30, 40, 50].map((min, idx) => {
-                      const minStr = min.toString().padStart(2, '0');
-                      const tiempoSlot = `${hora.split(':')[0]}:${minStr}`;
-                      const turnoEncontrado = turnosHora.find((t) => t.timeSlot?.startTime?.includes(tiempoSlot));
+                    {[0, 1, 2, 3, 4, 5].map((subIdx) => {
+                      const turnoEncontrado = turnosHora[subIdx];
+
+                      const nombrePaciente = turnoEncontrado?.patient?.person
+                        ? `${turnoEncontrado.patient.person.lastName}, ${turnoEncontrado.patient.person.firstName}`
+                        : (turnoEncontrado as any)?.patientName
+                        ? (turnoEncontrado as any).patientName
+                        : turnoEncontrado
+                        ? 'Paciente Registrado'
+                        : null;
+
+                      const esInasistencia = turnoEncontrado?.status === 'NO_SHOW' || turnoEncontrado?.status === 'ABSENT';
 
                       return (
                         <div
-                          key={idx}
+                          key={subIdx}
                           onClick={() => {
                             if (turnoEncontrado) {
                               setTurnoSeleccionado(turnoEncontrado);
                               setMostrarModalDetalle(true);
                             } else {
-                              alMostrarNotificacion('info', 'Slot Disponible', `Solapa libre ${tiempoSlot} hs para agendamiento.`);
+                              alMostrarNotificacion('info', 'Slot Disponible', `Solapa libre ${hora} hs (Lugar ${subIdx + 1} de 6) para agendamiento.`);
                             }
                           }}
-                          className={`p-2 rounded-xl text-center cursor-pointer transition-all ${
-                            turnoEncontrado
-                              ? 'bg-rose-100/80 hover:bg-rose-200 border border-rose-300 text-rose-800 font-bold'
+                          title={
+                            esInasistencia
+                              ? `Inasistencia (No asistió sin aviso): ${nombrePaciente}`
+                              : turnoEncontrado
+                              ? `Turno reservado por: ${nombrePaciente}`
+                              : `Slot libre ${hora} hs (Cupo ${subIdx + 1} de 6)`
+                          }
+                          className={`p-2 rounded-xl text-center cursor-pointer transition-all flex flex-col justify-center items-center min-h-[54px] ${
+                            esInasistencia
+                              ? 'bg-amber-100/90 hover:bg-amber-200/90 border border-amber-300 text-amber-950 font-bold shadow-2xs'
+                              : turnoEncontrado
+                              ? 'bg-rose-100/90 hover:bg-rose-200 border border-rose-300 text-rose-950 font-bold shadow-2xs'
                               : 'bg-white hover:bg-[#eaf3ee] border border-[#e8e6df] hover:border-[#598b76] text-[#2d3748] font-semibold'
                           }`}
                         >
-                          <span className="block text-[8px] text-[#718096] uppercase">SUB-{idx + 1}</span>
-                          <span className={`block text-[11px] ${turnoEncontrado ? 'line-through' : ''}`}>
-                            {tiempoSlot}
+                          <span className={`block text-[8px] uppercase tracking-wider font-extrabold ${
+                            esInasistencia
+                              ? 'text-amber-700'
+                              : turnoEncontrado
+                              ? 'text-rose-700'
+                              : 'text-[#718096]'
+                          }`}>
+                            SUB-{subIdx + 1}{esInasistencia ? ' • Ausente' : ''}
                           </span>
+                          {esInasistencia ? (
+                            <span className="block text-[10px] font-extrabold text-amber-950 truncate max-w-full leading-tight mt-0.5 px-0.5 flex items-center gap-0.5">
+                              ⚠️ {nombrePaciente}
+                            </span>
+                          ) : turnoEncontrado ? (
+                            <span className="block text-[10px] font-extrabold text-rose-950 truncate max-w-full leading-tight mt-0.5 px-0.5">
+                              👤 {nombrePaciente}
+                            </span>
+                          ) : (
+                            <span className="block text-[11px] text-[#2d3748] mt-0.5">
+                              {hora}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
@@ -344,6 +410,7 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
               {turnosFiltrados.map((t) => {
                 const cancelado = t.status === 'CANCELLED';
+                const esInasistencia = t.status === 'NO_SHOW' || t.status === 'ABSENT';
                 const nombrePac = t.patient?.person
                   ? `${t.patient.person.lastName}, ${t.patient.person.firstName}`
                   : 'Paciente Registrado';
@@ -367,17 +434,26 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
                     className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
                       cancelado
                         ? 'bg-rose-50/50 border-rose-200 opacity-80'
+                        : esInasistencia
+                        ? 'bg-amber-50/80 border-amber-300 hover:border-amber-400 shadow-2xs'
                         : 'bg-[#faf9f5] hover:bg-white border-[#e8e6df] hover:border-[#598b76] shadow-2xs'
                     }`}
                   >
                     <div className="flex justify-between items-start">
-                      <h3 className="font-bold text-xs text-[#1a202c]">{nombrePac}</h3>
+                      <h3 className="font-bold text-xs text-[#1a202c] flex items-center gap-1">
+                        {esInasistencia && <span>⚠️</span>}
+                        {nombrePac}
+                      </h3>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                          cancelado ? 'bg-rose-200 text-rose-800' : 'bg-[#eaf3ee] text-[#234e3d]'
+                          cancelado
+                            ? 'bg-rose-200 text-rose-800'
+                            : esInasistencia
+                            ? 'bg-amber-200 text-amber-900 border border-amber-300'
+                            : 'bg-[#eaf3ee] text-[#234e3d]'
                         }`}
                       >
-                        {cancelado ? 'Cancelado' : 'Confirmado'}
+                        {cancelado ? 'Cancelado' : esInasistencia ? 'No Asistió' : 'Confirmado'}
                       </span>
                     </div>
 
@@ -415,6 +491,13 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
             </div>
 
             <div className="space-y-3 text-xs text-[#4a5568]">
+              {(turnoSeleccionado.status === 'NO_SHOW' || turnoSeleccionado.status === 'ABSENT') && (
+                <div className="p-3 rounded-2xl bg-amber-100/90 border border-amber-300 text-amber-950 flex items-center gap-2 font-bold text-xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>Inasistencia registrada: El paciente no asistió al turno sin previo aviso.</span>
+                </div>
+              )}
+
               <div className="p-3 rounded-2xl bg-[#faf9f5] border border-[#e8e6df] space-y-1">
                 <span className="text-[10px] font-bold text-[#718096] uppercase">Paciente</span>
                 <p className="font-bold text-sm text-[#1a202c]">
@@ -443,13 +526,22 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
               <button
                 onClick={() => setMostrarModalDetalle(false)}
                 className="px-4 py-2.5 rounded-2xl bg-[#f0eee6] hover:bg-[#e8e6df] font-bold text-xs text-[#4a5568]"
               >
                 Cerrar
               </button>
+              {turnoSeleccionado.status !== 'CANCELLED' && turnoSeleccionado.status !== 'NO_SHOW' && turnoSeleccionado.status !== 'ABSENT' && (
+                <button
+                  onClick={marcarInasistencia}
+                  className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 font-bold text-xs text-white shadow-md flex items-center gap-1.5"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Marcar Inasistencia
+                </button>
+              )}
               {turnoSeleccionado.status !== 'CANCELLED' && (
                 <button
                   onClick={cancelarTurno}

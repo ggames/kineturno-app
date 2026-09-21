@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 // Cliente Axios centralizado para KineTurnos
 export const clienteApi = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: 'http://localhost:3000',  //import.meta.env.VITE_API_BASE_URL ||
   headers: {
     'Content-Type': 'application/json',
   },

@@ -20,5 +20,15 @@ export const servicioTurnos = {
   async cancelarTurno(idTurno: string): Promise<Turno> {
     const respuesta = await clienteApi.patch<Turno>(`/appointments/${idTurno}/cancel`);
     return respuesta.data;
+  },
+
+  async actualizarEstadoTurno(idTurno: string, status: string): Promise<Turno> {
+    try {
+      const respuesta = await clienteApi.patch<Turno>(`/appointments/${idTurno}/status`, { status });
+      return respuesta.data;
+    } catch {
+      const respuesta = await clienteApi.patch<Turno>(`/appointments/${idTurno}`, { status });
+      return respuesta.data;
+    }
   }
 };

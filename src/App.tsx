@@ -18,7 +18,9 @@ import { PantallaAdministracionUsuarios } from './pantallas/PantallaAdministraci
 import { PantallaPerfilSeguridad } from './pantallas/PantallaPerfilSeguridad';
 import { PantallaGestionFeriados } from './pantallas/PantallaGestionFeriados';
 import { PantallaConfiguracionHorarios } from './pantallas/PantallaConfiguracionHorarios';
-import { HelpCircle, Stethoscope, BarChart3 } from 'lucide-react';
+import { PantallaGestionObrasSociales } from './pantallas/PantallaGestionObrasSociales';
+import { PantallaReportesEstadisticas } from './pantallas/PantallaReportesEstadisticas';
+import { HelpCircle, Stethoscope } from 'lucide-react';
 
 const RutasSistema: React.FC<{ agregarNotificacion: any }> = ({ agregarNotificacion }) => {
   const { usuario, cerrarSesion } = useAutenticacion();
@@ -39,22 +41,6 @@ const RutasSistema: React.FC<{ agregarNotificacion: any }> = ({ agregarNotificac
             <p className="text-xs text-[#718096]">Sesiones de 45 a 60 minutos con equipamiento de alta complejidad.</p>
           </div>
         ))}
-      </div>
-    </div>
-  );
-
-  const renderizarReportes = () => (
-    <div className="p-8 max-w-5xl mx-auto space-y-6 text-[#2d3748] animacion-fade-in">
-      <h2 className="text-2xl font-extrabold text-[#1a202c]">Reportes y Estadísticas</h2>
-      <p className="text-xs text-[#718096]">Métricas semanales de concurrencia y ocupación de slots.</p>
-      <div className="bg-white p-8 rounded-3xl border border-[#e8e6df] shadow-sm text-center space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-[#eaf3ee] text-[#598b76] mx-auto flex items-center justify-center">
-          <BarChart3 className="w-8 h-8" />
-        </div>
-        <h3 className="font-bold text-base text-[#1a202c]">Reporte Mensual de Pacientes</h3>
-        <p className="text-xs text-[#718096] max-w-md mx-auto">
-          Tasa de asiduidad del 94.2% con 240 turnos asistidos este mes y un promedio de 8 sesiones por tratamiento.
-        </p>
       </div>
     </div>
   );
@@ -111,8 +97,10 @@ const RutasSistema: React.FC<{ agregarNotificacion: any }> = ({ agregarNotificac
             <Route path="/profesionales" element={<PantallaRegistroProfesionales alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/configuracion-horarios" element={<PantallaConfiguracionHorarios alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/feriados" element={<PantallaGestionFeriados alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/obra-social" element={<PantallaGestionObrasSociales alMostrarNotificacion={agregarNotificacion} />} />
+            <Route path="/obras-sociales" element={<PantallaGestionObrasSociales alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/servicios" element={renderizarServicios()} />
-            <Route path="/reportes" element={renderizarReportes()} />
+            <Route path="/reportes" element={<PantallaReportesEstadisticas alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/configuracion" element={usuario.role === 'ADMIN' ? <PantallaAdministracionUsuarios alMostrarNotificacion={agregarNotificacion} /> : <PantallaPerfilSeguridad alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/perfil" element={<PantallaPerfilSeguridad alMostrarNotificacion={agregarNotificacion} />} />
             <Route path="/ayuda" element={renderizarAyuda()} />
