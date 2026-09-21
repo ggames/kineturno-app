@@ -360,7 +360,7 @@ export const PantallaReportesEstadisticas: React.FC<PropiedadesPantallaReportes>
       </div>
 
       {/* Contenido según tab activa */}
-      {tabActiva === 'consolidado' && renderConsolidado(reporteConsolidado, reporteAusentismo, reporteOcupacion)}
+      {tabActiva === 'consolidado' && renderConsolidado(reporteConsolidado, reporteAusentismo)}
       {tabActiva === 'ausentismo' && renderAusentismo(reporteAusentismo)}
       {tabActiva === 'ocupacion' && renderOcupacion(reporteOcupacion)}
     </div>
@@ -373,7 +373,6 @@ export const PantallaReportesEstadisticas: React.FC<PropiedadesPantallaReportes>
 function renderConsolidado(
   consolidado: ReporteConsolidado | null,
   ausentismo: ReporteAusentismo | null,
-  ocupacion: ReporteOcupacion | null,
 ) {
   if (!consolidado) {
     return (
