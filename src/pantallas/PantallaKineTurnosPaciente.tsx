@@ -123,11 +123,13 @@ export const PantallaKineTurnosPaciente: React.FC<PropiedadesPantallaKineTurnosP
           }
         } else {
           try {
+            const diaSemanaTurno = new Date(fechaTurno + 'T00:00:00').getDay();
+            const endHourFallback = diaSemanaTurno === 5 ? 18 : 20;
             const nuevaAgenda = await servicioAgenda.crearAgendaDiaria({
               professionalId: profesionalSeleccionadoId,
               date: fechaTurno,
               startHour: 8,
-              endHour: 18,
+              endHour: endHourFallback,
               maxCapacity: 6,
             });
             if (nuevaAgenda && nuevaAgenda.id) {

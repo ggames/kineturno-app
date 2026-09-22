@@ -97,10 +97,34 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
       if (!nombrePac.includes(q) && !dni.includes(q) && !obra.includes(q)) return false;
     }
     return true;
-  });
+  })  // Generar slots visuales completos para la fecha seleccionada:
+  // Lunes a Jueves: 08:00 a 20:00 (12 bloques: 08:00, 09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 18:00, 19:00)
+  // Viernes: 08:00 a 18:00 (10 bloques)
+  const obtenerHorasDelDia = (): string[] => {
+    let diaSemana = 1;
+    if (filtroFecha) {
+      const d = crearFechaLocal(filtroFecha);
+      diaSemana = d.getDay(); // 0: Dom, 1: Lun, ..., 5: Vie, 6: Sáb
+    }
+    const esViernes = diaSemana === 5;
+    const baseHoras = esViernes
+      ? ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
+      : ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
-  // Generar slots visuales para la fecha seleccionada
-  const horasFijas = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+    turnosFiltrados.forEach((t) => {
+      const slotStart = t.timeSlot?.startTime || (t as any).startTime || '';
+      if (slotStart) {
+        const horaPart = slotStart.substring(0, 5);
+        if (horaPart && !baseHoras.includes(horaPart)) {
+          baseHoras.push(horaPart);
+        }
+      }
+    });
+
+    return baseHoras.sort();
+  };
+
+  const horasVisibles = obtenerHorasDelDia();
 
   const manejarCrearAgendaDiaria = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,7 +320,9 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {horasFijas.map((hora) => {
+            {horasVisibles.map((hora) => {
+              const horaFinInt = parseInt(hora, 10) + 1;
+              const horaFinStr = String(horaFinInt).padStart(2, '0');
               const turnosHora = turnosFiltrados.filter((t) => {
                 if (t.status === 'CANCELLED') return false;
                 const slotStart = t.timeSlot?.startTime || (t as any).startTime || '';
@@ -310,7 +336,7 @@ export const PantallaAgendaCalendario: React.FC<PropiedadesPantallaAgendaCalenda
                   className="p-4 rounded-2xl bg-[#faf9f5] border border-[#e8e6df] space-y-3"
                 >
                   <div className="flex justify-between items-center text-xs font-bold text-[#1a202c]">
-                    <span>{hora} - {parseInt(hora) + 1}:00 hs</span>
+                    <span>{hora} - {horaFinStr}:00 hs</span>
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                         hayOcupacion

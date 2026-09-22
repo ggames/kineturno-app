@@ -209,7 +209,8 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
     const configSemanal = horariosSemanales.find((h) => h.dayOfWeek === isoWeekday);
 
     const startTimeStr = configSemanal?.startTime ? configSemanal.startTime.substring(0, 5) : '08:00';
-    const endTimeStr = configSemanal?.endTime ? configSemanal.endTime.substring(0, 5) : '18:00';
+    const defaultEnd = isoWeekday === 5 ? '18:00' : '20:00';
+    const endTimeStr = configSemanal?.endTime ? configSemanal.endTime.substring(0, 5) : defaultEnd;
     const slotDuration = configSemanal?.slotDurationMinutes || 60;
     const defaultCapacity = configSemanal?.maxCapacityPerSlot || 6;
 
@@ -217,7 +218,8 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
     const [startH, startM] = startTimeStr.split(':').map(Number);
     const [endH, endM] = endTimeStr.split(':').map(Number);
     const totalStartMins = (startH || 8) * 60 + (startM || 0);
-    const totalEndMins = (endH || 18) * 60 + (endM || 0);
+    const endHourFallbackNum = isoWeekday === 5 ? 18 : 20;
+    const totalEndMins = (endH || endHourFallbackNum) * 60 + (endM || 0);
 
     const horasGeneradas: string[] = [];
     for (let m = totalStartMins; m + slotDuration <= totalEndMins; m += slotDuration) {
@@ -227,7 +229,10 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
     }
 
     if (horasGeneradas.length === 0 && !diaBloqueado) {
-      horasGeneradas.push('08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00');
+      const defaultSlots = isoWeekday === 5
+        ? ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
+        : ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+      horasGeneradas.push(...defaultSlots);
     }
 
     const agendasDelDia = agendasReales.filter((a) => {
@@ -339,11 +344,12 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
       let slotId = slotParaReservar.slotBDId;
 
       if (!slotId) {
+        const endHourDefault = crearFechaLocal(fechaSeleccionada).getDay() === 5 ? 18 : 20;
         await servicioAgenda.crearAgendaDiaria({
           professionalId: proId,
           date: fechaSeleccionada,
           startHour: 8,
-          endHour: 18,
+          endHour: endHourDefault,
           maxCapacity: 6,
         }).catch(() => null);
 
@@ -388,11 +394,12 @@ export const PantallaPanelControlDashboard: React.FC<PropiedadesPantallaPanelCon
     }
 
     try {
+      const endHourDefault = crearFechaLocal(fechaSeleccionada).getDay() === 5 ? 18 : 20;
       await servicioAgenda.crearAgendaDiaria({
         professionalId: proId,
         date: fechaSeleccionada,
         startHour: 8,
-        endHour: 18,
+        endHour: endHourDefault,
         maxCapacity: 6,
       });
 

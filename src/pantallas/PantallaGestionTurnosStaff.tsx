@@ -153,11 +153,12 @@ export const PantallaGestionTurnosStaff: React.FC<PropiedadesPantallaGestionTurn
           }
         } else {
           try {
+            const endHourFallback = diaSemana === 5 ? 18 : 20;
             const nuevaAgenda = await servicioAgenda.crearAgendaDiaria({
               professionalId: profesionalTurnoId,
               date: fechaTurno,
               startHour: 8,
-              endHour: 18,
+              endHour: endHourFallback,
               maxCapacity: 6,
             });
             if (nuevaAgenda && nuevaAgenda.id) {

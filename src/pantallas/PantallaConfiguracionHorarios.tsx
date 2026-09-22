@@ -48,7 +48,7 @@ export const PantallaConfiguracionHorarios: React.FC<PropiedadesPantallaConfigur
   const crearHorarioPorDefecto = (dayOfWeek: number): HorarioSemanal => ({
     dayOfWeek,
     startTime: '08:00',
-    endTime: '18:00',
+    endTime: dayOfWeek >= 1 && dayOfWeek <= 4 ? '20:00' : '18:00',
     slotDurationMinutes: 60,
     maxCapacityPerSlot: 6,
     isActive: dayOfWeek <= 5, // Lunes a Viernes activos por defecto
